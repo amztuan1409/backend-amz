@@ -29,9 +29,14 @@ const bookingSchema = new mongoose.Schema(
 		customerName: String,
 		phoneNumber: String,
 		trip: String,
+		pickuplocation: String,
+		paylocation: String,
+		note: String,
+		deposit: String,
+		seats: String,
 		busCompany: {
 			type: String,
-			enum: ["AA", "LV", "ĐL", "LH", "TQĐ", "NK", "NXM"], // Các giá trị cho busCompany
+			enum: ["AA", "LV", "LH", "TQĐ", "PP", "KT"], // Các giá trị cho busCompany
 		},
 		quantity: Number,
 		ticketPrice: Number,

@@ -3,17 +3,17 @@ const User = require("../models/User");
 const Expense = require("../models/Expense");
 const Report = require("../models/Report");
 const mongoose = require("mongoose");
+const dayjs = require("dayjs");
 const axios = require("axios");
 const APP_ID = "308620249544591200";
 const APP_SECRET = "Pu2QXN0EoHiC30NM27VR";
 const REDIRECT_URI = "https://amazinglimousine.vn";
-
 const botToken = "6994113641:AAFtxp5Q3hUVUAfWCi6VNHxCfPghmPoMzEI";
 const chatId = "5654502663";
 let accessToken =
-	"94i747_Tt4GkIGmLUTtGI2jF2HnceROmVNCI47Q3Y21yJIi6IDwiLnCrSby5e_9mA4XMUY3OwIes04mQ0vF1531961WfkPCU6buUFnt9j28sEYa24i-43mOOM1bLwOSRPpWD87xKgW1_8dK-ITNQArX5PIbMhiW8PNWI6ZM7jaeUKILA3Cc-IJmw95unz9zz5XCYLHY2idyEIX5B6eMBLK5KC6jakgr5O50s5dIAkGSd61CP1UY39oahNWSCqOK231KfK1Z_cbioQqTH4hANOGbsF6CZcELICrnk02MVoWO8254A8V3BE3LaP30ZgEWC4LTqF2kbg2i-QpKA4QMLMo9F2NLrhhP-MJTgS0FWm7qC8bnINCc1Or4B8K43tu1fMKu1L0YfW0aPMIGNAR63GsEWwMHpnTr4";
+	"Jk5SBranXLr4urSgNp69KK7bKYD0Il0oBCvf9sb5p3KpbaOwHJIOBW6LFXL68Pe40F88870XgbiPhp9qPY-gK0tnDLDOMePf6OeaHLeWfayUX19yIrMNL3AU36De3QvC0AqVKKeFerqohoT-Q0QPIGsiBM9M0VT6JPvoC0ODz1TXstub97kY9ZYgEG4Y1kenPh5a1da2_3OzZbemPZ_uFW_lTqzZNQvNEuytNaiayMO1zaaTTodiAXUyJXfUTySSGQTdR2TnrNHgndLrCahhJNYVCceJJv5C2TqBDcXmha4oqYn2LmosI3c24K8c3x5GGw4TUGPnc0rpsXug27QJC5tS3m0aVRDtOlfkH2fmv497fpb1Ft2RMY2Z0dOt3wXyVjmcUHXqhrfKm0rD6cA4I6Jn73ulvkj2LIc4NG";
 let refreshToken =
-	"P8947mq_X2zkW4yQ2p-88sk6IXCKOj9y5OeK2I4orby8mN1jCtBWLJYwLoKk7Efo2ADVGWXonnG1hWLnVMYWN5dE1YjW0wvI1xagP3vScGukuZ9tDmsw1olH9d8xREOtC9qjG3CXXGSpx05h3mgLEsl7LdnuBvmZTivQMHDsuGyib4naC4dr0IBqQrWm7SW8KyPNC5S-wdbVpMeRINRrB5s7O1iuGw5zNuKf4JXWZYWCsXv63ZQPTHFKMGSOQSan98X3MXv7qmuXYbXOGNJwCcMwFdLSNfC5Lu8lQ6DAhmH_jsfmRL3U97VZI44M3Cy7VjTvOaCKsX1u-GKWR171Jb3sGNnW5j0g1CniQoC1tm0BkLTs2ttt50o4L4mMPC8KCi85Hb4isWLMzLazLppp3L6ByW019uKl";
+	"JXIq45HxHaD45hyLKdjAJq4GkXnDVKa7M5pJ5KrVOqutDTPLHoTOHJ9Fqcb_S4ryP6_eN2fw6t9NMRzmFNCrTKOSW5mm30Xw8X63Oq4iELCDC9vdHoC4Or8byaye7WDqPNEgI1vu8anx4fCN22auCHuYjmL_LXbBANMyMLjD4dT1KgHE8dCkSd1kktm5LXTIOqgjPN9sN2iyGEe3PsWV3pLZcYKZN2a0L4k1MZX5DdXgLP1o3dnWNnzExqbJSNKS2HZC9NmxInC49UCtL1zL8ovtx29RGcjiD73UN5TVSMf4Tjqn7a9u2srgpIqsQJG7P7kj2Zv03pagU9e_RdGNBpvfvYjKLaaYEa3B3IyjRbn_ESnuBH4_ItOhgnq3CGOkT2MF0XS-9bbS9AnhQZb78bd0OrXZHqC";
 
 // Hàm để làm mới access_token sử dụng refresh_token
 const TelegramBot = require("node-telegram-bot-api");
@@ -101,11 +101,14 @@ exports.createBooking = async (req, res) => {
 		const templateData = {
 			full_name: booking.customerName,
 			phone: formattedPhone,
-			seat_number: Math.floor(Math.random() * 100) + 1, // Random seat number
-			giodi_ngaydi: "13:00:00 14/02/2021",
+			seat_number: booking.seats,
+			// giodi_ngaydi: `${booking.timeStart} + ${dayjs(booking.dateGo).format(
+			// 	"D-M-YYYY"
+			// )}`,
+			giodi_ngaydi: booking.timeStart,
 			chuyen_di: booking.trip,
-			don: booking.trip,
-			tra: booking.trip,
+			don: booking.pickuplocation,
+			tra: booking.paylocation,
 			tongtien: booking.total,
 		};
 
