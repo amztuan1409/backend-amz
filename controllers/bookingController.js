@@ -399,40 +399,39 @@ exports.updateBookingById = async (req, res) => {
 
 exports.refundBooking = async (req, res) => {
 	const { bookingId } = req.params;
-	const { refundPercentage } = req.body;
+	// Mở rộng để nhận refundPercentage cho cả hai loại vé
+	const { refundPercentage, refundPercentageDouble } = req.body;
 
 	try {
-		// Tìm booking
 		const booking = await Booking.findById(bookingId);
 		if (!booking) {
 			return res.status(404).json({ message: "Booking not found" });
 		}
 
-		// Lưu lại thông số cũ để so sánh
+		// Giả định booking cũng có trường quantityDouble cho số lượng vé loại "double"
 		const oldTotal = booking.total;
-		const oldTicketPrice = booking.ticketPrice;
-		const oldQuantity = booking.quantity;
 
-		// Tính toán số tiền cần hoàn trả cho từng vé
+		// Tính toán số tiền hoàn trả cho mỗi loại vé
 		const refundAmountPerTicket =
 			booking.ticketPrice * (1 - refundPercentage / 100);
-
-		// Kiểm tra nếu refundAmountPerTicket = 0, gửi tin nhắn qua Telegram
-		if (refundAmountPerTicket === 0) {
-			const message = `Vé được hoàn có mã là ${booking.ticketCode}`;
+		const refundAmountPerTicketDouble =
+			booking.ticketPriceDouble * (1 - refundPercentageDouble / 100);
+		// Kiểm tra nếu một trong hai loại vé được hoàn với tỷ lệ 0%
+		if (refundAmountPerTicket === 0 || refundAmountPerTicketDouble === 0) {
+			const message = `Vé được hoàn có mã là ${booking.ticketCode}. Một trong hai loại vé đã được hoàn với tỷ lệ 0%.`;
 			await bot.sendMessage(chatId, message);
 		}
-
-		// Cập nhật giá vé sau khi hoàn trả
+		// Cập nhật giá vé mới sau hoàn tiền
 		booking.ticketPrice = refundAmountPerTicket;
+		booking.ticketPriceDouble = refundAmountPerTicketDouble;
 
-		// Tính lại tổng giá tiền của đơn đặt xe dựa trên giá vé mới và số lượng vé
-		booking.total = refundAmountPerTicket * booking.quantity;
+		// Tính lại tổng giá tiền của booking
+		booking.total =
+			booking.quantity * refundAmountPerTicket +
+			booking.quantityDouble * refundAmountPerTicketDouble;
 
-		// Lưu đơn đặt xe đã cập nhật
 		await booking.save();
 
-		// Tìm report tương ứng với ngày của booking
 		let report = await Report.findOne({ date: booking.date });
 		if (!report) {
 			return res
@@ -440,14 +439,12 @@ exports.refundBooking = async (req, res) => {
 				.json({ message: "Report not found for the booking date" });
 		}
 
-		// Cập nhật số lượng đặt xe của nhà xe trong báo cáo
+		// Cập nhật số lượng đặt xe và doanh thu trong report
 		const busCompany = booking.busCompany.toLowerCase();
-		report[busCompany] -= 1;
-
-		// Cập nhật doanh thu trong report
+		report[busCompany] -= 1; // Cập nhật số lượng nếu cần
 		report.revenue -= oldTotal - booking.total;
 
-		// Tính toán và cập nhật lại relativeProfit
+		// Tính toán và cập nhật lại relativeProfit có thể cần phải được điều chỉnh để phản ánh cả hai loại vé
 		const oldRelativeProfit = await calculateRelativeProfit(
 			booking.date,
 			oldTotal,
@@ -460,7 +457,6 @@ exports.refundBooking = async (req, res) => {
 		);
 		report.relativeProfit -= oldRelativeProfit - newRelativeProfit;
 
-		// Lưu lại báo cáo đã được cập nhật
 		await report.save();
 
 		res.status(200).json(booking);

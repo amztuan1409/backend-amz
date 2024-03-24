@@ -40,6 +40,8 @@ const bookingSchema = new mongoose.Schema(
 		},
 		quantity: Number,
 		ticketPrice: Number,
+		ticketPriceDouble: Number,
+		quantityDouble: Number,
 		total: Number,
 		isPayment: { type: Boolean, default: false },
 		isSendZNS: { type: Boolean, default: false },
