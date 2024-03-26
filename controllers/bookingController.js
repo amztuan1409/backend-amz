@@ -135,8 +135,9 @@ exports.createBooking = async (req, res) => {
 		- Số ghế : ${booking.seats ? booking.seats : "Chưa xác nhận"} 
 		- Đón : ${booking.pickuplocation}
 		- Trả : ${booking.paylocation}
-		- CK : ${booking.deposit}
+		- CK : ${booking.deposit ? booking.deposit : "Chưa thanh toán"  }
 		- Nhân viên :${user.name} 
+		- Ghi chú :${booking.note} 
 		- Tổng tiền : ${(booking.total).toLocaleString()}`);
 		
 				await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
@@ -421,8 +422,9 @@ exports.updateBookingById = async (req, res) => {
 		- Số ghế : ${booking.seats ? booking.seats : "Chưa xác nhận"} 
 		- Đón : ${booking.pickuplocation}
 		- Trả : ${booking.paylocation}
-		- CK : ${booking.deposit}
+		- CK : ${booking.deposit ? booking.deposit : "Chưa thanh toán"}
 		- Nhân viên :${booking.name} 
+		- Ghi chú :${booking.note} 
 		- Tổng tiền : ${(booking.total).toLocaleString()}`);
 		
 		await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
