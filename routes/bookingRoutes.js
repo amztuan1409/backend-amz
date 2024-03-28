@@ -19,7 +19,7 @@ router.get("/", bookingController.getAllBookings);
 
 router.get("/get-order-byuser/:userId", bookingController.getBookingsByUserId);
 
-router.post("/getbyuserId/:month/:year", bookingController.getBookingsByUserId);
+router.post("/getbyuserId/", bookingController.getBookingsByUserId);
 
 router.patch("/:bookingId", bookingController.updateBookingById);
 

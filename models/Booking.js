@@ -8,6 +8,7 @@ const bookingSchema = new mongoose.Schema(
 		},
 		date: Date,
 		dateGo: Date,
+		dateBack: Date,
 		bookingSource: {
 			type: String,
 			enum: [
@@ -26,15 +27,24 @@ const bookingSchema = new mongoose.Schema(
 			],
 		},
 		timeStart: String,
+		timeBack : String,
 		customerName: String,
 		phoneNumber: String,
 		trip: String,
+		tripBack: String,
 		pickuplocation: String,
 		paylocation: String,
+		pickuplocationBack: String,
+		paylocationBack: String,
 		note: String,
 		deposit: String,
 		seats: String,
+		seatsBack: String,
 		busCompany: {
+			type: String,
+			enum: ["AA", "LV", "LH", "TQĐ", "PP", "KT"], // Các giá trị cho busCompany
+		},
+		busCompanyBack: {
 			type: String,
 			enum: ["AA", "LV", "LH", "TQĐ", "PP", "KT"], // Các giá trị cho busCompany
 		},
@@ -42,6 +52,10 @@ const bookingSchema = new mongoose.Schema(
 		ticketPrice: Number,
 		ticketPriceDouble: Number,
 		quantityDouble: Number,
+		quantityBack: Number,
+		ticketPriceBack: Number,
+		ticketPriceDoubleBack: Number,
+		quantityDoubleBack: Number,
 		total: Number,
 		isPayment: { type: Boolean, default: false },
 		isSendZNS: { type: Boolean, default: false },

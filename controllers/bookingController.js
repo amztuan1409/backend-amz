@@ -11,8 +11,9 @@ const REDIRECT_URI = "https://amazinglimousine.vn";
 const botToken = "6994113641:AAFtxp5Q3hUVUAfWCi6VNHxCfPghmPoMzEI";
 const chatId = "6422234224";
 const botTokenBooking = "7042630214:AAH8W9G_a9a00szypErr1YiKPUYghgY42UQ";
-let accessToken = "QRj_V7Isp5bZkNHvShR0LMQ_SN1joPSmEujdLIdgqXHaipzUTx3yE0ZOIa95aUOK5VKeLNN_pW8YgpjDT-3t53Mz7KzpqyeODQKcMrdqumOwjpOYRBxrSXRgHZrqlhP5Pkbo1XVgfb5ncbSLEisNELAJKqKLdBSxKyr4SJYCd3nhqKze8jAA96pTUa8QYByO1kfLU1lXWLfog34E1kE2ScMvEmW6nDDBJiuQ1p61xdTzqpu45ThzM0UAJ1iRqAvQL9581KEIY6WM-44pMO-gJmhTOJTih9bNACvs1sgzWo8ayqjnDfkc1a3Q55OfhA4cVBfuGJxejmHtl6T25TEg27wh7IeVwF5HT9y941NtuZ9J_Yz54gtVAdJE20faeVfPSiam5MUyqs4XrZC6JgB380Rn80KbEu4LUAxDMG"
-let refreshToken = "nzcIJKoxV0NDsvb8Ihjm2SZTd45LxZG0gyolCLdr90YxvfOlJ-CCP9Rpdsu8uozQrjwALpFo8axh-RK42yzPCkZNwnmHrr40chBVBr_KLXElsAS2V-TFGe73_5LtvnL6ylJzJH2M6LtXYArzOUi7OvJ5erSMnXvtyygcU0RsJ7JTzgLd3-X1ATRts6WdvrHOvD_9P1pcPr-TnlP-RFTBQfIRq2LKX5bgbENkGNFbM7swmC5mHVPHRfNrnqzKqbD0li6u5Kd132JFr89eHDCxABtOYm0urWqmlTM8Bqtv3MQRdgb8Ng9OHjZ7iWOvyLWKkkkmALR96ZMkgf4QSBarJxAEZ5uuc35YxwMkB1YLDJd9WDaGDgPJNiwYnXOredC4ri_A9WciJWs2axz5JBDKt7X0etq5"
+let accessToken =
+	"rItOBfZWlKhVBzChdk2nHjefrYA1cxG3ZWpQ4Bo1row_AFGpy_wL3xysz2s3W-89eJdUBBltl1BZLAfsz_MITiP0yNFzsVzrt1N55P2bzG3GRUGRawN71zKw_03LfyKNnGgaRj-Sj5NELurtoEYYPkWhp5FfvAbcyNskNCFHlcx-QQDZoVkpUUGta1NYYO8j_qM05BhzfJMUTzyks_ddCPb3zooBmUnLhWpZHegwvasU4lL9eBcHT9qf_awtg-9Mans3I8ANvcoXElXEduR5Bhj4znZ-rP4fmbgA3zRHaJVY7FOwex6JMAH-Xpc1tQWFd6FD49_qzIgfFCz7lQtjVwvaosFYhTH0eoFMPPUIo5oZEwPZlfgSUwPHd4QtnPXSit-NHup1cY2ULVyblE7GI8vvjKeqGZ1r-rTKbFYyIW"
+let refreshToken = "dk6uKa_lPLYKuxDNIUzfL97bjbvMiZitwUkwRqoM6oNT_fPELv8m3VFZybb8ZMWdo-UqKNg5EGNtvAHDBOu_Fh7biZ8nZ3nRX-U3MGoL2mws_DLI1QTO9A77_70wlc47iD36IWgl7IUBtijP5AuTKxJHdLmdYa8skDlrMoccBrQkswGV0A8HRf_8k0D3n209vihyPsg1L2pYplnZPx9t3ylSzsCGe6aLYTdiToAcQ0gKox5d6fGp1Rh6k5e7l0urWyAHO0-rDpZJn8jM0wm27ORSZqqeb0HEflNP0WZ_VtghblmAT_jhOT2EmJnDpbjbbv_76Wdg44w4bPWSFPKXHBx9h1XcY04Jzk_O152JLaRAs8ygPRPPIC3DypCQnJ5xaOwIB1pCJ5kSmyqj5CrHVkauxpf3zsHO"
 // Hàm để làm mới access_token sử dụng refresh_token
 const TelegramBot = require("node-telegram-bot-api");
 const bot = new TelegramBot(botToken, { polling: false });
@@ -124,24 +125,32 @@ exports.createBooking = async (req, res) => {
 
 		const phone = formattedPhone; // Số điện thoại muốn gửi tin nhắn
 		const zaloMessageResponse = await sendZaloMessage(phone, templateData);
-		const message = escapeMarkdownV2(`*Thông tin đặt vé:*
+		let message = escapeMarkdownV2(`*Thông tin đặt vé:*
 		- ${booking.isPayment ? "ĐÃ THANH TOÁN " : "CHƯA THANH TOÁN"}
 		- Tên khách: ${booking.customerName}
 		- Số điện thoại: ${booking.phoneNumber}
 		- Ngày đi : ${formatDate(booking.dateGo)}
+		${booking.quantityBack > 0 || booking.quantityDoubleBack > 0 ? `- Ngày về : ${formatDate(booking.dateBack)}` : "" }
+		- Chuyến: ${booking.trip}
 		- Giờ đi: ${booking.timeStart}
-		- Phòng đôi: ${booking.quantityDouble} - ${(booking.ticketPriceDouble).toLocaleString()}
-		- Phòng đơn: ${booking.quantity} - ${(booking.ticketPrice).toLocaleString()}
-		- Số ghế : ${booking.seats ? booking.seats : "Chưa xác nhận"} 
-		- Đón : ${booking.pickuplocation}
-		- Trả : ${booking.paylocation}
-		- CK : ${booking.deposit ? booking.deposit : "Chưa thanh toán"  }
+		${booking.timeBack ? `- Giờ về: ${booking.timeBack}` : ""}
+		${booking.quantity ? `${booking.quantity} Phòng đơn / ${(booking.ticketPrice).toLocaleString()}` : ""}
+		${booking.quantityDouble ? `${booking.quantityDouble} Phòng đôi / ${(booking.ticketPriceDouble).toLocaleString()}` : ""}
+		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
+		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
+		- Số ghế đi : ${booking.seats ? booking.seats : ""}
+		- Đón vé đi : ${booking.pickuplocation}
+		- Trả vé đi : ${booking.paylocation}
+		${booking.quantityBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
+		${booking.quantityBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
+		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}
+		- CK : ${booking.deposit ? booking.deposit : ""  }
 		- Nhân viên :${user.name} 
-		- Ghi chú :${booking.note} 
 		- Tổng tiền : ${(booking.total).toLocaleString()}`);
+		message = message.replace(/^\s*\n/gm, '');
+	await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
+	
 		
-				await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
-		// Kiểm tra xem tin nhắn Zalo có được gửi thành công không
 		if (zaloMessageResponse && zaloMessageResponse.message == "Success") {
 			booking.isSendZNS = true; // Cập nhật trạng thái gửi tin nhắn Zalo thành công
 		} else {
@@ -250,25 +259,25 @@ exports.getAllBookings = async (req, res) => {
 		// Truy vấn cơ sở dữ liệu để lấy bookings
 		let bookings = await Booking.find(query)
 			.populate("userId", "name") // Populating username from User model
-			.select("-_id") // Exclude _id field
+			
 			.sort({ date: -1 });
-		// Chuyển đổi ngày thành định dạng 'dd/mm/yyyy' và username lên cấp độ cao hơn trong đối tượng
+		// Chuyển đổi ngày thành định dạng 'dd/mm/yyyy' và username lên cấp độ cao hơn trong đôi tượng
 		bookings = bookings.map((booking) => {
 			const bookingObject = booking.toObject();
 			// Format date
-			bookingObject.date = booking.date
-				.toISOString()
-				.substring(0, 10)
-				.split("-")
-				.reverse()
-				.join("/");
+			// bookingObject.date = booking.date
+			// 	.toISOString()
+			// 	.substring(0, 10)
+			// 	.split("-")
+			// 	.reverse()
+			// 	.join("/");
 
-			bookingObject.dateGo = booking.date
-				.toISOString()
-				.substring(0, 10)
-				.split("-")
-				.reverse()
-				.join("/");
+			// bookingObject.dateGo = booking.date
+			// 	.toISOString()
+			// 	.substring(0, 10)
+			// 	.split("-")
+			// 	.reverse()
+			// 	.join("/");
 
 			// Set username at the top-level of the object
 			bookingObject.name = bookingObject.userId.name;
@@ -291,26 +300,23 @@ const moment = require("moment");
 exports.getBookingsByUserId = async (req, res) => {
 	try {
 	  const { userId } = req.body; // Lấy userId từ body
-	  const {day , month, year } = req.params; // Lấy month và year từ URL params
+	  const { date, startDate, endDate } = req.body; // Lấy date hoặc startDate và endDate từ body
   
 	  if (!userId) {
 		return res.status(400).json({ message: "userId is required" });
 	  }
   
-	  let query = { userId: userId, total: { $ne: 0 } }; // Tạo query mặc định
+	  let query = { userId: userId }; // Tạo query mặc định
   
-	  if (month && year) {
-		// Nếu có month và year, thêm điều kiện về ngày vào query
-		const startDate = moment.utc(`${year}-${month}-01`, "YYYY-MM-DD");
-		const endDate = moment.utc(startDate).endOf("month");
-		query.date = { $gte: startDate.toDate(), $lte: endDate.toDate() };
-	  } else {
-		// Nếu không có month và year, lấy dữ liệu cho tháng và năm hiện tại
-		const currentMonth = moment.utc().month() + 1; // Tháng hiện tại (dựa trên index)
-		const currentYear = moment.utc().year(); // Năm hiện tại
-		const startDate = moment.utc(`${currentYear}-${currentMonth}-01`, "YYYY-MM-DD");
-		const endDate = moment.utc(startDate).endOf("month");
-		query.date = { $gte: startDate.toDate(), $lte: endDate.toDate() };
+	  if (date) {
+	    // Nếu có date, lọc bookings cho ngày đó
+	    const specificDate = moment.utc(date, "YYYY-MM-DD");
+	    query.date = { $eq: specificDate.toDate() };
+	  } else if (startDate && endDate) {
+	    // Nếu có startDate và endDate, lọc bookings trong khoảng thời gian đó
+	    const start = moment.utc(startDate, "YYYY-MM-DD");
+	    const end = moment.utc(endDate, "YYYY-MM-DD");
+	    query.date = { $gte: start.toDate(), $lte: end.toDate() };
 	  }
   
 	  // Sử dụng query để tìm bookings và populate thông tin user
@@ -322,7 +328,7 @@ exports.getBookingsByUserId = async (req, res) => {
 	  // Chuyển đổi kết quả để bao gồm trường name từ bảng User
 	  const results = bookings.map(booking => ({
 		...booking,
-		name: booking.userId?.name, // Lấy trường name từ đối tượng User
+		name: booking.userId?.name, // Lấy trường name từ đôi tượng User
 		userId: booking.userId?._id // Nếu bạn muốn giữ lại trường userId
 	  }));
   
@@ -330,7 +336,8 @@ exports.getBookingsByUserId = async (req, res) => {
 	} catch (error) {
 	  res.status(500).json({ error: error.message });
 	}
-  };
+};
+
 
 exports.getBookingById = async (req, res) => {
 	try {
@@ -348,7 +355,7 @@ exports.getBookingById = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
-exports.updateBookingById = async (req, res) => {
+exports.updateBookingById = async (req, res) => {	
     const { bookingId } = req.params;
     const updateData = req.body; // Dữ liệu cập nhật từ body của request
 
@@ -409,26 +416,37 @@ exports.updateBookingById = async (req, res) => {
             tra: booking.paylocation,
             tongtien: booking.total.toString()
         };
-
-        await sendZaloMessage(formattedPhone, templateData);
-		const message = escapeMarkdownV2(`*Thông tin đặt vé:*
+		
+		if (!booking.isSendZNS) {
+			await sendZaloMessage(formattedPhone, templateData);
+			booking.isSendZNS = true; // Sử dụng toán tử so sánh chính xác
+			await booking.save(); // Cập nhật trường isSendZNS trong cơ sở dữ liệu
+		}
+		
+		let message = escapeMarkdownV2(`*Thông tin đặt vé:*
 		- ${booking.isPayment ? "ĐÃ THANH TOÁN " : "CHƯA THANH TOÁN"}
 		- Tên khách: ${booking.customerName}
 		- Số điện thoại: ${booking.phoneNumber}
 		- Ngày đi : ${formatDate(booking.dateGo)}
+		${booking.quantityBack > 0 || booking.quantityDoubleBack ? `- Ngày về : ${formatDate(booking.dateBack)}` : "" }
+		- Chuyến: ${booking.trip}
 		- Giờ đi: ${booking.timeStart}
-		- Phòng đôi: ${booking.quantityDouble} - ${(booking.ticketPriceDouble).toLocaleString()}
-		- Phòng đơn: ${booking.quantity} - ${(booking.ticketPrice).toLocaleString()}
-		- Số ghế : ${booking.seats ? booking.seats : "Chưa xác nhận"} 
-		- Đón : ${booking.pickuplocation}
-		- Trả : ${booking.paylocation}
-		- CK : ${booking.deposit ? booking.deposit : "Chưa thanh toán"}
+		${booking.timeBack ? `- Giờ về: ${booking.timeBack}` : ""}
+		${booking.quantity ? `${booking.quantity} Phòng đơn / ${(booking.ticketPrice).toLocaleString()}` : ""}
+		${booking.quantityDouble ? `${booking.quantityDouble} Phòng đôi / ${(booking.ticketPriceDouble).toLocaleString()}` : ""}
+		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
+		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
+		- Số ghế đi : ${booking.seats ? booking.seats : ""}
+		- Đón vé đi : ${booking.pickuplocation}
+		- Trả vé đi : ${booking.paylocation}
+		${booking.quantityBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
+		${booking.quantityBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
+		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}
+		- CK : ${booking.deposit ? booking.deposit : ""  }
 		- Nhân viên :${booking.name} 
-		- Ghi chú :${booking.note} 
 		- Tổng tiền : ${(booking.total).toLocaleString()}`);
-		
-		await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
-
+		message = message.replace(/^\s*\n/gm, '');
+	await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
         res.status(200).json(booking);
     } catch (error) {
         console.error(error);
@@ -441,7 +459,7 @@ function escapeMarkdownV2(text) {
 }
 exports.refundBooking = async (req, res) => {
     const { bookingId } = req.params;
-    const { refundPercentage, refundPercentageDouble } = req.body;
+    const { refundPercentage, refundPercentageDouble, bank } = req.body;
 
     try {
         const booking = await Booking.findById(bookingId);
@@ -449,57 +467,58 @@ exports.refundBooking = async (req, res) => {
             return res.status(404).json({ message: "Booking not found" });
         }
 
-        const oldTotal = booking.total;
+        // Tính toán số tiền giảm cho mỗi loại vé dựa trên phần trăm hoàn tiền
+        const refundAmountPerTicket = booking.ticketPrice * (refundPercentage / 100); // Số tiền giảm cho mỗi vé đơn
+        const refundAmountPerTicketDouble = booking.ticketPriceDouble * (refundPercentageDouble / 100); // Số tiền giảm cho mỗi vé đôi
+		const totalRefundSingle = refundAmountPerTicket * booking.quantity;
+		const totalRefundDouble = refundAmountPerTicketDouble * booking.quantityDouble;
 
-        // Tính toán số tiền hoàn trả cho mỗi loại vé
-        const refundAmountPerTicket =
-            booking.ticketPrice * (1 - refundPercentage / 100);
-        const refundAmountPerTicketDouble =
-            booking.ticketPriceDouble * (1 - refundPercentageDouble / 100);
-
-        // Tính tổng số tiền hoàn trả dựa trên số lượng vé
-        const totalRefundSingle = refundAmountPerTicket * booking.quantity;
-        const totalRefundDouble = refundAmountPerTicketDouble * booking.quantityDouble;
+		// Tổng số tiền hoàn là tổng của cả hai loại vé
 		const totalRefund = totalRefundSingle + totalRefundDouble;
+        booking.ticketPrice -= refundAmountPerTicket;
+        booking.ticketPriceDouble -= refundAmountPerTicketDouble;
 
-		const message = escapeMarkdownV2(`*Thông tin hoàn vé:*
-		- Mã vé: ${booking.ticketCode}
-		- Tên khách: ${booking.customerName}
-		- Số điện thoại: ${booking.phoneNumber}
-		- Tiền hoàn vé đơn: ${refundAmountPerTicket.toLocaleString()} (${refundPercentage}%)
-		- Tiền hoàn vé đôi: ${refundAmountPerTicketDouble.toLocaleString()} (${refundPercentageDouble}%)
-		- Tổng tiền hoàn: ${totalRefund.toLocaleString()}`);
-		
-				await bot.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
-        // Cập nhật giá vé mới sau hoàn tiền và tổng giá tiền của booking
-        booking.ticketPrice = refundAmountPerTicket;
-        booking.ticketPriceDouble = refundAmountPerTicketDouble;
-        booking.total -= totalRefund;
+        // Tính toán tổng số tiền mới của đơn hàng
+        const newTotalSingle = booking.ticketPrice * booking.quantity;
+        const newTotalDouble = booking.ticketPriceDouble * booking.quantityDouble;
+        booking.total = newTotalSingle + newTotalDouble;
 
         await booking.save();
+
+        // Chuẩn bị thông tin để gửi qua bot
+        const message = escapeMarkdownV2(`*Thông tin hoàn vé:*
+        - Mã vé: ${booking.ticketCode}
+        - Tên khách: ${booking.customerName}
+        - Số điện thoại: ${booking.phoneNumber}
+        - Tổng tiền hoàn vé đơn: ${totalRefundSingle.toLocaleString('vi-VN')} (${refundPercentage}%)
+        - Tổng tiền hoàn vé đôi: ${refundAmountPerTicketDouble.toLocaleString('vi-VN')} (${refundPercentageDouble}%)
+        - Số tài khoản: ${bank}
+        - Tổng tiền hoàn: ${totalRefund.toLocaleString('vi-VN')}`);
+        
+        await bot.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
 
         let report = await Report.findOne({ date: booking.date });
         if (!report) {
             return res.status(404).json({ message: "Report not found for the booking date" });
         }
-
-        // Cập nhật số lượng đặt xe và doanh thu trong report
-        const busCompany = booking.busCompany.toLowerCase();
-        report[busCompany] -= 1;
-        report.revenue -= oldTotal - booking.total;
-
-        // Tính toán và cập nhật lại relativeProfit
-        const oldRelativeProfit = await calculateRelativeProfit(
-            booking.date,
-            oldTotal,
-            report.avStaffCostDeducted
-        );
-        const newRelativeProfit = await calculateRelativeProfit(
-            booking.date,
-            booking.total,
-            report.avStaffCostDeducted
-        );
-        report.relativeProfit -= oldRelativeProfit - newRelativeProfit;
+		   // Cập nhật số lượng đặt xe và doanh thu trong report
+		   const busCompany = booking.busCompany.toLowerCase();
+		   report[busCompany] -= 1;
+		   report.revenue -= oldTotal - booking.total;
+   
+		   // Tính toán và cập nhật lại relativeProfit
+		   const oldRelativeProfit = await calculateRelativeProfit(
+			   booking.date,
+			   oldTotal,
+			   report.avStaffCostDeducted
+		   );
+		   const newRelativeProfit = await calculateRelativeProfit(
+			   booking.date,
+			   booking.total,
+			   report.avStaffCostDeducted
+		   );
+		   report.relativeProfit -= oldRelativeProfit - newRelativeProfit;
+   
 
         await report.save();
 
@@ -511,65 +530,55 @@ exports.refundBooking = async (req, res) => {
 };
 
 
-
 exports.deleteBookingById = async (req, res) => {
-	const { bookingId } = req.params;
+    const { bookingId } = req.params;
 
-	try {
-		// Tìm và xóa đơn đặt xe
-		const booking = await Booking.findByIdAndDelete(bookingId);
-		if (!booking) {
-			return res.status(404).json({ message: "Booking not found" });
-		}
+    try {
+        // Tìm booking nhưng không xóa ngay lập tức
+        const booking = await Booking.findById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
 
-		// Lưu lại thông số cũ của đơn đặt xe để so sánh
-		const oldTotal = booking.total;
-		const oldBookingSource = booking.bookingSource.toLowerCase();
-		const oldBusCompany = booking.busCompany.toLowerCase();
+        // Lưu lại thông số cũ của đơn đặt xe để so sánh
+        const oldTotal = booking.total;
+        const oldBookingSource = booking.bookingSource ? booking.bookingSource.toLowerCase() : '';
+        const oldBusCompany = booking.busCompany ? booking.busCompany.toLowerCase() : '';
 
-		// Tìm report tương ứng với ngày của đơn đặt xe đã bị xóa
-		let report = await Report.findOne({ date: booking.date });
-		if (!report) {
-			return res
-				.status(404)
-				.json({ message: "Report not found for the booking date" });
-		}
+        // Tìm report tương ứng với ngày của đơn đặt xe đã bị xóa
+        let report = await Report.findOne({ date: booking.date });
+        if (!report) {
+            return res.status(404).json({ message: "Report not found for the booking date" });
+        }
 
-		if (booking.busCompany) {
-			const busCompany = booking.busCompany.toLowerCase();
-			if (report[busCompany] && report[busCompany] > 0) {
-				report[busCompany] -= 1;
-			}
-		}
+        // Cập nhật báo cáo dựa trên dữ liệu booking cũ
+        if (booking.busCompany && report[oldBusCompany] && report[oldBusCompany] > 0) {
+            report[oldBusCompany] -= 1;
+        }
 
-		// Giảm số lượng nguồn đặt trong báo cáo (nếu có)
-		if (booking.bookingSource) {
-			const bookingSource = booking.bookingSource.toLowerCase();
-			if (report[bookingSource] && report[bookingSource] > 0) {
-				report[bookingSource] -= 1;
-			}
-		}
+        if (booking.bookingSource && report[oldBookingSource] && report[oldBookingSource] > 0) {
+            report[oldBookingSource] -= 1;
+        }
 
-		// Giảm doanh thu trong report
-		report.revenue -= oldTotal;
+        report.revenue -= oldTotal;
 
-		// Tính toán và giảm relativeProfit
-		const oldRelativeProfit = await calculateRelativeProfit(
-			booking.date,
-			oldTotal,
-			report.avStaffCostDeducted
-		);
-		report.relativeProfit -= oldRelativeProfit;
+        // Cập nhật relativeProfit nếu cần
+        // Giả sử calculateRelativeProfit là hàm async và cần được cải thiện để phản ánh đúng logic
+        const oldRelativeProfit = await calculateRelativeProfit(booking.date, oldTotal, report.avStaffCostDeducted);
+        report.relativeProfit -= oldRelativeProfit;
 
-		// Lưu lại báo cáo đã được cập nhật
-		await report.save();
+        await report.save();
 
-		res.status(200).json({ message: "Booking deleted successfully" });
-	} catch (error) {
-		console.error(error);
-		res.status(500).json({ error: error.message });
-	}
+        // Xóa booking sau khi đã cập nhật báo cáo
+        await Booking.findByIdAndDelete(bookingId);
+
+        res.status(200).json({ message: "Booking deleted successfully" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
 };
+
 exports.getAllBookingsWithTotalZero = async (req, res) => {
 	try {
 		const bookings = await Booking.find({ total: 0 }); // Truy vấn tất cả các đơn với total = 0
