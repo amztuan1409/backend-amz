@@ -9,11 +9,12 @@ const APP_ID = "308620249544591200";
 const APP_SECRET = "Pu2QXN0EoHiC30NM27VR";
 const REDIRECT_URI = "https://amazinglimousine.vn";
 const botToken = "6994113641:AAFtxp5Q3hUVUAfWCi6VNHxCfPghmPoMzEI";
-const chatId = "6422234224";
+const chatIdBooking = "-4196368779";
+const chatIdRefund = "-4166682869"
 const botTokenBooking = "7042630214:AAH8W9G_a9a00szypErr1YiKPUYghgY42UQ";
 let accessToken =
-	"rItOBfZWlKhVBzChdk2nHjefrYA1cxG3ZWpQ4Bo1row_AFGpy_wL3xysz2s3W-89eJdUBBltl1BZLAfsz_MITiP0yNFzsVzrt1N55P2bzG3GRUGRawN71zKw_03LfyKNnGgaRj-Sj5NELurtoEYYPkWhp5FfvAbcyNskNCFHlcx-QQDZoVkpUUGta1NYYO8j_qM05BhzfJMUTzyks_ddCPb3zooBmUnLhWpZHegwvasU4lL9eBcHT9qf_awtg-9Mans3I8ANvcoXElXEduR5Bhj4znZ-rP4fmbgA3zRHaJVY7FOwex6JMAH-Xpc1tQWFd6FD49_qzIgfFCz7lQtjVwvaosFYhTH0eoFMPPUIo5oZEwPZlfgSUwPHd4QtnPXSit-NHup1cY2ULVyblE7GI8vvjKeqGZ1r-rTKbFYyIW"
-let refreshToken = "dk6uKa_lPLYKuxDNIUzfL97bjbvMiZitwUkwRqoM6oNT_fPELv8m3VFZybb8ZMWdo-UqKNg5EGNtvAHDBOu_Fh7biZ8nZ3nRX-U3MGoL2mws_DLI1QTO9A77_70wlc47iD36IWgl7IUBtijP5AuTKxJHdLmdYa8skDlrMoccBrQkswGV0A8HRf_8k0D3n209vihyPsg1L2pYplnZPx9t3ylSzsCGe6aLYTdiToAcQ0gKox5d6fGp1Rh6k5e7l0urWyAHO0-rDpZJn8jM0wm27ORSZqqeb0HEflNP0WZ_VtghblmAT_jhOT2EmJnDpbjbbv_76Wdg44w4bPWSFPKXHBx9h1XcY04Jzk_O152JLaRAs8ygPRPPIC3DypCQnJ5xaOwIB1pCJ5kSmyqj5CrHVkauxpf3zsHO"
+	"kWm824uTP1Qm3WCDI1re6hK81WHNS3uI_oDPVbTzTYJTFrjoTqTZAEWrLrznMc01tWbeToPBK0sB6azn3LzTQBaQDXGONm89ba5bKn4p0mwwR3SO3oae3wjN7tjA07Ccr7z0KKesNJ73L6HEFpzg4AjvS74LAbbcj5fI3YyDMtcsGM4EB1PNROi6Mp0zT4CpkZjCNaH3LZpP2dvnU4KI2Om7BMvjUXWVx6iIQ6ruEn_kCHDrRd4F3_0-3X84SsHrXIO88oHfRroW61mW9myxGh9CDZXCFL5modL64505Qb-kGG0I9LTdL954RXu-6c48k54AImKY8I-RHafU8oDZIDjXHo9a2Y5z-q9FOMuMIGliRdfW4WP3EhfdKKK72re6ctjX73uCI7QTNbyN5ZH3I-ntTrP8JLVC9rukGWLb5W"
+let refreshToken = "E1dIOMb9D3Wo6zbaRqauD3STt6rmGdr88NlUHtfKH1vUMA10Tb0kSNn-bouiMGOO46gZFHD30Y4NK_i-DG9RDH01uYXA55G54pF99XXiUoCVMvfw1tyUN1T0ycqyTN5F8aIJOo5wS3ibAFC7UmX06IDTzn43TKP0F7ZdSI9DP74XJkegVryBBbzuhYHCMn8K7N3rBI0dRdn-6TmaGJn3TMKZt6mr85yrA0xJ6W8gGYO43k8-FJfc8Jq3YZ8V8cm89oUED2mxR6Hm2OjOTIiPKYe2b7CD8IPPLMgANNTARGD8IuyjKMul2mjkaGqRO7mENqd34b82OI5I7Ey7VW9YEt87pXHjLIq9HNAz4szoFnTK8OmNUIWEJ7aiab1yEJHzHMQ7V6jP9pXXR80xP6bcr6bbKJKu"
 // Hàm để làm mới access_token sử dụng refresh_token
 const TelegramBot = require("node-telegram-bot-api");
 const bot = new TelegramBot(botToken, { polling: false });
@@ -129,26 +130,27 @@ exports.createBooking = async (req, res) => {
 		- ${booking.isPayment ? "ĐÃ THANH TOÁN " : "CHƯA THANH TOÁN"}
 		- Tên khách: ${booking.customerName}
 		- Số điện thoại: ${booking.phoneNumber}
-		- Ngày đi : ${formatDate(booking.dateGo)}
-		${booking.quantityBack > 0 || booking.quantityDoubleBack > 0 ? `- Ngày về : ${formatDate(booking.dateBack)}` : "" }
 		- Chuyến: ${booking.trip}
-		- Giờ đi: ${booking.timeStart}
-		${booking.timeBack ? `- Giờ về: ${booking.timeBack}` : ""}
+		- Thời gian đi : ${formatDate(booking.dateGo)} - ${booking.timeStart}
 		${booking.quantity ? `${booking.quantity} Phòng đơn / ${(booking.ticketPrice).toLocaleString()}` : ""}
 		${booking.quantityDouble ? `${booking.quantityDouble} Phòng đôi / ${(booking.ticketPriceDouble).toLocaleString()}` : ""}
-		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
-		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
 		- Số ghế đi : ${booking.seats ? booking.seats : ""}
 		- Đón vé đi : ${booking.pickuplocation}
-		- Trả vé đi : ${booking.paylocation}
-		${booking.quantityBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
-		${booking.quantityBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
-		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}
+		- Trả vé đi : ${booking.paylocation}\n\n\n	
+		
+		${booking.quantityBack > 0 || booking.quantityDoubleBack > 0 ? `- Thời gian về : ${formatDate(booking.dateBack)} - ${booking.timeBack}` : "" }
+		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
+		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi vé về / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
+		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}\n\n\n
+		${booking.quantityBack || booking.quantityDoubleBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
+		${booking.quantityBack || booking.quantityDoubleBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
+		
+		
 		- CK : ${booking.deposit ? booking.deposit : ""  }
 		- Nhân viên :${user.name} 
 		- Tổng tiền : ${(booking.total).toLocaleString()}`);
-		message = message.replace(/^\s*\n/gm, '');
-	await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
+		message = message.replace(/^\s*/gm, '');
+	await botBooking.sendMessage(chatIdBooking, message, { parse_mode: "MarkdownV2" });
 	
 		
 		if (zaloMessageResponse && zaloMessageResponse.message == "Success") {
@@ -427,26 +429,27 @@ exports.updateBookingById = async (req, res) => {
 		- ${booking.isPayment ? "ĐÃ THANH TOÁN " : "CHƯA THANH TOÁN"}
 		- Tên khách: ${booking.customerName}
 		- Số điện thoại: ${booking.phoneNumber}
-		- Ngày đi : ${formatDate(booking.dateGo)}
-		${booking.quantityBack > 0 || booking.quantityDoubleBack ? `- Ngày về : ${formatDate(booking.dateBack)}` : "" }
 		- Chuyến: ${booking.trip}
-		- Giờ đi: ${booking.timeStart}
-		${booking.timeBack ? `- Giờ về: ${booking.timeBack}` : ""}
+		- Thời gian đi : ${formatDate(booking.dateGo)} - ${booking.timeStart}
 		${booking.quantity ? `${booking.quantity} Phòng đơn / ${(booking.ticketPrice).toLocaleString()}` : ""}
 		${booking.quantityDouble ? `${booking.quantityDouble} Phòng đôi / ${(booking.ticketPriceDouble).toLocaleString()}` : ""}
-		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
-		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
 		- Số ghế đi : ${booking.seats ? booking.seats : ""}
 		- Đón vé đi : ${booking.pickuplocation}
-		- Trả vé đi : ${booking.paylocation}
-		${booking.quantityBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
-		${booking.quantityBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
-		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}
+		- Trả vé đi : ${booking.paylocation}\n\n\n	
+		
+		${booking.quantityBack > 0 || booking.quantityDoubleBack > 0 ? `- Thời gian về : ${formatDate(booking.dateBack)} - ${booking.timeBack}` : "" }
+		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
+		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi vé về / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
+		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}\n\n\n
+		${booking.quantityBack || booking.quantityDoubleBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
+		${booking.quantityBack || booking.quantityDoubleBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
+		
+		
 		- CK : ${booking.deposit ? booking.deposit : ""  }
 		- Nhân viên :${booking.name} 
 		- Tổng tiền : ${(booking.total).toLocaleString()}`);
-		message = message.replace(/^\s*\n/gm, '');
-	await botBooking.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
+		message = message.replace(/^\s*/gm, '');
+	await botBooking.sendMessage(chatIdBooking, message, { parse_mode: "MarkdownV2" });
         res.status(200).json(booking);
     } catch (error) {
         console.error(error);
@@ -459,29 +462,18 @@ function escapeMarkdownV2(text) {
 }
 exports.refundBooking = async (req, res) => {
     const { bookingId } = req.params;
-    const { refundPercentage, refundPercentageDouble, bank } = req.body;
+    const { refundAmount, bank , season} = req.body;
 
     try {
         const booking = await Booking.findById(bookingId);
         if (!booking) {
-            return res.status(404).json({ message: "Booking not found" });
+            return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
         }
 
-        // Tính toán số tiền giảm cho mỗi loại vé dựa trên phần trăm hoàn tiền
-        const refundAmountPerTicket = booking.ticketPrice * (refundPercentage / 100); // Số tiền giảm cho mỗi vé đơn
-        const refundAmountPerTicketDouble = booking.ticketPriceDouble * (refundPercentageDouble / 100); // Số tiền giảm cho mỗi vé đôi
-		const totalRefundSingle = refundAmountPerTicket * booking.quantity;
-		const totalRefundDouble = refundAmountPerTicketDouble * booking.quantityDouble;
+        const oldTotal = booking.total;
 
-		// Tổng số tiền hoàn là tổng của cả hai loại vé
-		const totalRefund = totalRefundSingle + totalRefundDouble;
-        booking.ticketPrice -= refundAmountPerTicket;
-        booking.ticketPriceDouble -= refundAmountPerTicketDouble;
-
-        // Tính toán tổng số tiền mới của đơn hàng
-        const newTotalSingle = booking.ticketPrice * booking.quantity;
-        const newTotalDouble = booking.ticketPriceDouble * booking.quantityDouble;
-        booking.total = newTotalSingle + newTotalDouble;
+        // Cập nhật tổng số tiền mới sau khi hoàn tiền
+        booking.total -= refundAmount;
 
         await booking.save();
 
@@ -490,35 +482,31 @@ exports.refundBooking = async (req, res) => {
         - Mã vé: ${booking.ticketCode}
         - Tên khách: ${booking.customerName}
         - Số điện thoại: ${booking.phoneNumber}
-        - Tổng tiền hoàn vé đơn: ${totalRefundSingle.toLocaleString('vi-VN')} (${refundPercentage}%)
-        - Tổng tiền hoàn vé đôi: ${refundAmountPerTicketDouble.toLocaleString('vi-VN')} (${refundPercentageDouble}%)
+        - Tổng tiền hoàn: ${refundAmount.toLocaleString('vi-VN')}
         - Số tài khoản: ${bank}
-        - Tổng tiền hoàn: ${totalRefund.toLocaleString('vi-VN')}`);
+		- Lý do : ${season}`);
         
-        await bot.sendMessage(chatId, message, { parse_mode: "MarkdownV2" });
+        await bot.sendMessage(chatIdRefund, message, { parse_mode: "MarkdownV2" });
 
         let report = await Report.findOne({ date: booking.date });
         if (!report) {
-            return res.status(404).json({ message: "Report not found for the booking date" });
+            return res.status(404).json({ message: "Không tìm thấy báo cáo cho ngày đặt vé" });
         }
-		   // Cập nhật số lượng đặt xe và doanh thu trong report
-		   const busCompany = booking.busCompany.toLowerCase();
-		   report[busCompany] -= 1;
-		   report.revenue -= oldTotal - booking.total;
-   
-		   // Tính toán và cập nhật lại relativeProfit
-		   const oldRelativeProfit = await calculateRelativeProfit(
-			   booking.date,
-			   oldTotal,
-			   report.avStaffCostDeducted
-		   );
-		   const newRelativeProfit = await calculateRelativeProfit(
-			   booking.date,
-			   booking.total,
-			   report.avStaffCostDeducted
-		   );
-		   report.relativeProfit -= oldRelativeProfit - newRelativeProfit;
-   
+
+        // Tính toán lợi nhuận tương đối trước và sau khi hoàn tiền
+        const oldRelativeProfit = await calculateRelativeProfit(
+            booking.date,
+            oldTotal,
+            report.avStaffCostDeducted
+        );
+        const newRelativeProfit = await calculateRelativeProfit(
+            booking.date,
+            booking.total,
+            report.avStaffCostDeducted
+        );
+        // Cập nhật lợi nhuận tương đối và doanh thu trong báo cáo
+        report.relativeProfit += newRelativeProfit - oldRelativeProfit; // Sửa lại từ trừ sang cộng vì newRelativeProfit thường nhỏ hơn oldRelativeProfit
+        report.revenue -= refundAmount;
 
         await report.save();
 
@@ -600,41 +588,50 @@ exports.getTotalRevenueByUserAndDate = async (req, res) => {
 
 		const aggregationPipeline = [
 			{
-				$match: {
-					date: {
-						$gte: parsedDate,
-						$lt: endDate,
-					},
+			  $match: {
+				date: {
+				  $gte: parsedDate,
+				  $lt: endDate,
 				},
+			  },
 			},
 			{
-				$group: {
-					_id: "$userId",
-					totalRevenue: { $sum: "$total" },
-				},
+			  $group: {
+				_id: "$userId",
+				totalRevenue: { $sum: "$total" }, // Tính tổng doanh thu
+				totalTransfer: { $sum: "$transfer" }, // Tính tổng qua chuyển khoản
+				totalCash: { $sum: "$cash" }, // Tính tổng tiền mặt
+				totalGarageCollection: { $sum: "$garageCollection" }, // Tính tổng thu nhập từ garage
+			  },
 			},
 			{
-				$lookup: {
-					from: "users", // Tên bảng 'User' trong cơ sở dữ liệu MongoDB
-					localField: "_id", // Trường từ bảng 'Booking' để join
-					foreignField: "_id", // Trường từ bảng 'User' để join
-					as: "userDetails", // Tên mảng chứa kết quả sau khi join
-				},
+			  $lookup: {
+				from: "users", // Tên bảng 'User' trong cơ sở dữ liệu MongoDB
+				localField: "_id", // Trường từ bảng 'Booking' để join
+				foreignField: "_id", // Trường từ bảng 'User' để join
+				as: "userDetails", // Tên mảng chứa kết quả sau khi join
+			  },
 			},
 			{
-				$unwind: "$userDetails", // Bỏ mảng để có thể truy cập dữ liệu người dùng
+			  $unwind: "$userDetails", // Bỏ mảng để có thể truy cập dữ liệu người dùng
 			},
 			{
-				$project: {
-					_id: 0,
-					userId: "$_id",
-					name: "$userDetails.name", // Chọn trường name từ kết quả join
-					total: "$totalRevenue",
-				},
+			  $project: {
+				_id: 0,
+				userId: "$_id",
+				name: "$userDetails.name", // Chọn trường name từ kết quả join
+				total: "$totalRevenue",
+				transfer: "$totalTransfer",
+				cash: "$totalCash",
+				garageCollection: "$totalGarageCollection",
+			  },
 			},
-		];
+		  ];
+		  
+		  const result = await Booking.aggregate(aggregationPipeline);
+		  
 
-		const result = await Booking.aggregate(aggregationPipeline);
+		
 
 		res.status(200).json(result);
 	} catch (error) {
