@@ -12,9 +12,8 @@ const botToken = "6994113641:AAFtxp5Q3hUVUAfWCi6VNHxCfPghmPoMzEI";
 const chatIdBooking = "-4196368779";
 const chatIdRefund = "-4166682869"
 const botTokenBooking = "7042630214:AAH8W9G_a9a00szypErr1YiKPUYghgY42UQ";
-let accessToken =
-	"kWm824uTP1Qm3WCDI1re6hK81WHNS3uI_oDPVbTzTYJTFrjoTqTZAEWrLrznMc01tWbeToPBK0sB6azn3LzTQBaQDXGONm89ba5bKn4p0mwwR3SO3oae3wjN7tjA07Ccr7z0KKesNJ73L6HEFpzg4AjvS74LAbbcj5fI3YyDMtcsGM4EB1PNROi6Mp0zT4CpkZjCNaH3LZpP2dvnU4KI2Om7BMvjUXWVx6iIQ6ruEn_kCHDrRd4F3_0-3X84SsHrXIO88oHfRroW61mW9myxGh9CDZXCFL5modL64505Qb-kGG0I9LTdL954RXu-6c48k54AImKY8I-RHafU8oDZIDjXHo9a2Y5z-q9FOMuMIGliRdfW4WP3EhfdKKK72re6ctjX73uCI7QTNbyN5ZH3I-ntTrP8JLVC9rukGWLb5W"
-let refreshToken = "E1dIOMb9D3Wo6zbaRqauD3STt6rmGdr88NlUHtfKH1vUMA10Tb0kSNn-bouiMGOO46gZFHD30Y4NK_i-DG9RDH01uYXA55G54pF99XXiUoCVMvfw1tyUN1T0ycqyTN5F8aIJOo5wS3ibAFC7UmX06IDTzn43TKP0F7ZdSI9DP74XJkegVryBBbzuhYHCMn8K7N3rBI0dRdn-6TmaGJn3TMKZt6mr85yrA0xJ6W8gGYO43k8-FJfc8Jq3YZ8V8cm89oUED2mxR6Hm2OjOTIiPKYe2b7CD8IPPLMgANNTARGD8IuyjKMul2mjkaGqRO7mENqd34b82OI5I7Ey7VW9YEt87pXHjLIq9HNAz4szoFnTK8OmNUIWEJ7aiab1yEJHzHMQ7V6jP9pXXR80xP6bcr6bbKJKu"
+let accessToken = "tghr9Hv9sIdKgFuW64dL9T6k-oa7DODzc9Rv5WjpqnkVmRfXBI6H6hcW-tyCBBeCjyoKMdOfx4leY9CQGGtlIEkveHWZElSSeTUPK1ThnGBU_-bvKMwG4CtGuHn2GwP9pC7HF58jc4VTlT5M5WcU0zoNsL9M5g1OtwdfL7uunp_oXejiRn7R1DppZLS9Ij0phisyRcHMzWF9-jy6NcEORi3JoM01LfujaBNEObm6WMVGvgunJG3ZGzQtpaP7Mg8OskV4N7S4w2_-WPX2RWxFCU3lvKTwQu8wpFdzOtOSe6hAaPC2MtR0KE3NZmWkUk5XYVgBEZmQn6IBze0R8KBxPEh8X6rcJzG7riFwSKikbmdGol5UIqgf8OJJsauBPOS-ajYfCryr_5tcZTS6JW-z3yViwWfE-DKUF19Hs2a"
+let refreshToken = "hap5E7ieTqMaJiuzVIXxIQ58opHYLdaFlbwI1cHTSG_hE9mRVZ1i9AOksr4IH0jhiK3eTd4cMd3g5hrfJm8BOy5YkszSKWuRwr7_RrmqC7VQ8T5sSZbW3wiCetC24MjkW7IdHpXS4p-nEgHAEbjtVhmwWmCP1sm_dIQr9WWbM3AGH9yv7bvj1R5DgIKLBNq9d3AqFYG11WAu9VOr03P2JjugfYvMIs5Js5xPMbOw5dxqAUKBLoGl3keNdGz02t8Xx1gGBZW6SpE40PK7B6D50OzWd1OxLrPliaVdKn1MNrRADhvB2WPAOwKDWHOTPbaff4su77fgNm7qQUu1J7472Sz5pIPzL60PztQZ7NLcLpNjR80KPaz3BEWfin9QBaiBvqMjToToPKwcT8HRSUrIW4rtC7P5"
 // Hàm để làm mới access_token sử dụng refresh_token
 const TelegramBot = require("node-telegram-bot-api");
 const bot = new TelegramBot(botToken, { polling: false });
@@ -132,6 +131,7 @@ exports.createBooking = async (req, res) => {
 		- Số điện thoại: ${booking.phoneNumber}
 		- Chuyến: ${booking.trip}
 		- Thời gian đi : ${formatDate(booking.dateGo)} - ${booking.timeStart}
+		- Hãng xe đi : ${booking.busCompany == "AA" ? "An Anh Amazing" : booking.busCompany == "LV" ? "Long Vân Amazing" : booking.busCompany == 'LH' ? "Lạc Hồng Amazing" : booking.busCompany == "TQĐ" ? "Tân Quang Dũng Amazing" : booking.busCompany == "PP" ? "Phong Phú Amazing" : "Khang Thịnh Amazing"}
 		${booking.quantity ? `${booking.quantity} Phòng đơn / ${(booking.ticketPrice).toLocaleString()}` : ""}
 		${booking.quantityDouble ? `${booking.quantityDouble} Phòng đôi / ${(booking.ticketPriceDouble).toLocaleString()}` : ""}
 		- Số ghế đi : ${booking.seats ? booking.seats : ""}
@@ -139,18 +139,18 @@ exports.createBooking = async (req, res) => {
 		- Trả vé đi : ${booking.paylocation}\n\n\n	
 		
 		${booking.quantityBack > 0 || booking.quantityDoubleBack > 0 ? `- Thời gian về : ${formatDate(booking.dateBack)} - ${booking.timeBack}` : "" }
+		${booking.busCompanyBack ? `- Hãng xe về : ${booking.busCompanyBack == "AA" ? "An Anh Amazing" : booking.busCompanyBack == "LV" ? "Long Vân Amazing" : booking.busCompanyBack == 'LH' ? "Lạc Hồng Amazing" : booking.busCompanyBack == "TQĐ" ? "Tân Quang Dũng Amazing" : booking.busCompanyBack == "PP" ? "Phong Phú Amazing" : "Khang Thịnh Amazing"}` : ""}
 		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
 		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi vé về / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
 		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}\n\n\n
 		${booking.quantityBack || booking.quantityDoubleBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
 		${booking.quantityBack || booking.quantityDoubleBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
 		
-		
+		- Tổng tiền : ${(booking.total).toLocaleString()}
 		- CK : ${booking.deposit ? booking.deposit : ""  }
-		- Nhân viên :${user.name} 
-		- Tổng tiền : ${(booking.total).toLocaleString()}`);
+		- Nhân viên :${user.name} `);
 		message = message.replace(/^\s*/gm, '');
-	await botBooking.sendMessage(chatIdBooking, message, { parse_mode: "MarkdownV2" });
+		await botBooking.sendMessage(chatIdBooking, message, { parse_mode: "MarkdownV2" });
 	
 		
 		if (zaloMessageResponse && zaloMessageResponse.message == "Success") {
@@ -431,6 +431,7 @@ exports.updateBookingById = async (req, res) => {
 		- Số điện thoại: ${booking.phoneNumber}
 		- Chuyến: ${booking.trip}
 		- Thời gian đi : ${formatDate(booking.dateGo)} - ${booking.timeStart}
+		- Hãng xe đi : ${booking.busCompany == "AA" ? "An Anh Amazing" : booking.busCompany == "LV" ? "Long Vân Amazing" : booking.busCompany == 'LH' ? "Lạc Hồng Amazing" : booking.busCompany == "TQĐ" ? "Tân Quang Dũng Amazing" : booking.busCompany == "PP" ? "Phong Phú Amazing" : "Khang Thịnh Amazing"}
 		${booking.quantity ? `${booking.quantity} Phòng đơn / ${(booking.ticketPrice).toLocaleString()}` : ""}
 		${booking.quantityDouble ? `${booking.quantityDouble} Phòng đôi / ${(booking.ticketPriceDouble).toLocaleString()}` : ""}
 		- Số ghế đi : ${booking.seats ? booking.seats : ""}
@@ -438,16 +439,16 @@ exports.updateBookingById = async (req, res) => {
 		- Trả vé đi : ${booking.paylocation}\n\n\n	
 		
 		${booking.quantityBack > 0 || booking.quantityDoubleBack > 0 ? `- Thời gian về : ${formatDate(booking.dateBack)} - ${booking.timeBack}` : "" }
+		${booking.busCompanyBack ? `- Hãng xe về : ${booking.busCompanyBack == "AA" ? "An Anh Amazing" : booking.busCompanyBack == "LV" ? "Long Vân Amazing" : booking.busCompanyBack == 'LH' ? "Lạc Hồng Amazing" : booking.busCompanyBack == "TQĐ" ? "Tân Quang Dũng Amazing" : booking.busCompanyBack == "PP" ? "Phong Phú Amazing" : "Khang Thịnh Amazing"}` : ""}
 		${booking.quantityBack ? `${booking.quantityBack} Phòng đơn vé về / ${(booking.ticketPriceBack).toLocaleString()}` : ""}
 		${booking.quantityDoubleBack ? `${booking.quantityDoubleBack} Phòng đôi vé về / ${(booking.ticketPriceDoubleBack).toLocaleString()}` : ""}
 		${booking.seatsBack ? `- Số ghế về :  ${booking.seatsBack}`  : ""}\n\n\n
 		${booking.quantityBack || booking.quantityDoubleBack ? `- Đón vé về : ${booking.pickuplocationBack}` : ""}
 		${booking.quantityBack || booking.quantityDoubleBack ? `- Trả vé về : ${booking.paylocationBack}` : ""}
 		
-		
+		- Tổng tiền : ${(booking.total).toLocaleString()}
 		- CK : ${booking.deposit ? booking.deposit : ""  }
-		- Nhân viên :${booking.name} 
-		- Tổng tiền : ${(booking.total).toLocaleString()}`);
+		- Nhân viên :${booking.name} `);
 		message = message.replace(/^\s*/gm, '');
 	await botBooking.sendMessage(chatIdBooking, message, { parse_mode: "MarkdownV2" });
         res.status(200).json(booking);
