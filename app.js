@@ -6,6 +6,7 @@ const moment = require("moment-timezone");
 const bookingRoutes = require("./routes/bookingRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const refundRoutes = require("./routes/refundRoutes");
 const Report = require("./models/Report");
 const connectDB = require("./db/index");
 const app = express();
@@ -50,5 +51,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/report", reportRoutes);
+app.use("/api/refund", refundRoutes);
 
 app.listen(8800, () => console.log("Server running on port 8800"));
