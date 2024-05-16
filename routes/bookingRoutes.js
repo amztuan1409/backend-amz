@@ -14,6 +14,18 @@ router.post(
 	isEmployee,
 	bookingController.createBooking
 );
+router.post(
+	"/create-first",
+	verifyToken,
+	isEmployee,
+	bookingController.createBookingFrist
+);
+router.post(
+	"/create-round-trip",
+	verifyToken,
+	isEmployee,
+	bookingController.createAndNotifyBooking
+);
 
 router.get("/", bookingController.getAllBookings);
 
@@ -21,7 +33,11 @@ router.get("/get-order-byuser/:userId", bookingController.getBookingsByUserId);
 
 router.post("/getbyuserId/", bookingController.getBookingsByUserId);
 
-router.patch("/:bookingId", bookingController.updateBookingById);
+router.patch(
+	"/:bookingId",
+	verifyToken,
+	bookingController.updateBookingById
+);
 
 router.get("/:bookingId", bookingController.getBookingById);
 
@@ -31,6 +47,9 @@ router.delete("/delete/:bookingId", bookingController.deleteBookingById);
 
 router.get("/getZeroTotal", bookingController.getAllBookingsWithTotalZero);
 
-router.get("/revenue/:date", bookingController.getTotalRevenueByUserAndDate);
+router.get(
+	"/revenue/:startDate/:endDate",
+	bookingController.getTotalRevenueByUserAndDate
+);
 
 module.exports = router;

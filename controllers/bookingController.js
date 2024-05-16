@@ -14,7 +14,7 @@ const chatIdBooking = "-4196368779";
 const chatIdRefund = "-4166682869";
 const botTokenBooking = "7042630214:AAH8W9G_a9a00szypErr1YiKPUYghgY42UQ";
 let accessToken =
-	"zrKoPKmrZ7hzLpbWIZM0TlXHF6bLLCOLebLdKsT5Y0xMTM1M9dkOCkrWTb0yUfmwwMXQMGjye4_vGLOP0bkk0_DlKtqPJAyTgr1f0Mv8t4gUA0bSJ3Z72Vu8FcKV2iC9qpOyLMWAtYAV4c1wQGUZ0u4K6rvbUz8YbKWBOovIonZFMpT04s3p7k9n7cCKOVXXnGO-5X9Xn0d2GJvf3bF64Vrp9tyhSk04x6mrSIXqt0VuS61hEckgSFHdUHSj2CHIpJyh9maExKlB5519AGdf5UyS4L8X1VGFunOkKGK6paUo2N4DVpESM9CTU31s3vLofZ8jRqSbrJME2Y5SMXdr1gCEFavv8FqFZ4CxHL14zJYmJKXKIrETCujIT4evHyqzwqGmUIztxYJrRpT217Q82UDbDKXtWrQCBq0jZNe";
+	"4Cx10rjmra4QpCe6NN3QJH_Apmz2498hKC62DNK0mnTJq84MMXpJA4lJlJb00yWSN_scMtCs-sXar-X5VsU-KM25ean_GAfSUuRMP5zPod1flDfaA7QPMmwRvaKY8B5uPip5JtW0erH4tRPpVmhhILJtXtCUJjjv6AUTJYDfZtHcayOqLb6A3dQMuZ9DPu8jTPkIQYigzNmHqE5gKnQcSMVkwcn-LQbhR8tXJsfabaHFXeLVLbhQINMvo6v-UzvoD9YSS2DH_60vwwbnC3dcUo76YJaXA_CD1zAnFXmEfZWx_z032Y3O13huboO49DS1F9YZHc9tn0qehAyr24h_AG-WaMy8ViDF2e22U391aZCuk_8g8WU7CYFPbJC6EkDu4jZtJWiQwcKfug17OYBMPdVctanbJqTpY2LoLsZNGG";
 let refreshToken =
 	"hap5E7ieTqMaJiuzVIXxIQ58opHYLdaFlbwI1cHTSG_hE9mRVZ1i9AOksr4IH0jhiK3eTd4cMd3g5hrfJm8BOy5YkszSKWuRwr7_RrmqC7VQ8T5sSZbW3wiCetC24MjkW7IdHpXS4p-nEgHAEbjtVhmwWmCP1sm_dIQr9WWbM3AGH9yv7bvj1R5DgIKLBNq9d3AqFYG11WAu9VOr03P2JjugfYvMIs5Js5xPMbOw5dxqAUKBLoGl3keNdGz02t8Xx1gGBZW6SpE40PK7B6D50OzWd1OxLrPliaVdKn1MNrRADhvB2WPAOwKDWHOTPbaff4su77fgNm7qQUu1J7472Sz5pIPzL60PztQZ7NLcLpNjR80KPaz3BEWfin9QBaiBvqMjToToPKwcT8HRSUrIW4rtC7P5";
 // Hàm để làm mới access_token sử dụng refresh_token
@@ -36,27 +36,7 @@ function formatDate(dateStr) {
 		date.getFullYear().toString().substr(-2);
 	return formattedDate;
 }
-const refreshAccessToken = async () => {
-	try {
-		const response = await axios({
-			method: "post",
-			url: "https://oauth.zaloapp.com/v4/access_token",
-			data: {
-				app_id: APP_ID,
-				app_secret: APP_SECRET,
-				refresh_token: refreshToken, // Sử dụng refresh_token hiện tại
-				grant_type: "refresh_token",
-			},
-		});
 
-		accessToken = response.data.access_token;
-		refreshToken = response.data.refresh_token; // Cập nhật refresh_token mới (nếu có)
-		console.log("Refreshed access token:", accessToken);
-		// Tiếp tục lưu trữ các token này an toàn
-	} catch (error) {
-		console.error("Error refreshing access token:", error);
-	}
-};
 
 const sendZaloMessage = async (phone, templateData, id) => {
 	try {
@@ -77,12 +57,6 @@ const sendZaloMessage = async (phone, templateData, id) => {
 		console.log("Zalo API response:", response.data);
 		return response.data;
 	} catch (error) {
-		if (error.response && error.response.status === 401) {
-			// Lỗi không được ủy quyền có thể do access_token hết hạn
-			console.log("Access token expired, refreshing...");
-			await refreshAccessToken(); // Làm mới access_token
-			return sendZaloMessage(phone, templateData); // Thử gửi tin nhắn lại
-		}
 		console.error("Error sending Zalo message:", error);
 		throw error;
 	}
@@ -124,7 +98,7 @@ exports.createBooking = async (req, res) => {
 			trip: booking.trip + "-" + booking.seats,
 			phone: formattedPhone,
 			describe_bank: "Cọc vé AMZ" + booking.phoneNumber,
-			code: booking.ticketCode,
+			code: booking.ticketCode ? booking.ticketCode : "Chưa có khuyến mãi",
 			time_start: booking.timeStart + "-" + formatDate(booking.dateGo),
 			amout: formatCurrency(booking.total),
 		};
@@ -135,13 +109,20 @@ exports.createBooking = async (req, res) => {
 			templateData,
 			324692
 		);
-		let message = escapeMarkdownV2(`*Thông tin đặt vé:*
-		- ${booking.isPayment ? "ĐÃ THANH TOÁN " : "CHƯA THANH TOÁN"}
-		- Tên khách: ${booking.customerName}
-		- Số điện thoại: ${booking.phoneNumber}
-		- Chuyến: ${booking.trip}
-		- Thời gian đi : ${formatDate(booking.dateGo)} - ${booking.timeStart}
-		- Hãng xe đi : ${
+		let message = escapeMarkdownV2(`
+		${
+			booking.isPayment && booking.garageCollection > 0
+				? " " +
+				  `ĐÃ CỌC: ${(booking.transfer + booking.cash).toLocaleString()} ${
+						booking.garageCollection > 0
+							? `- TÀI XẾ THU: ${booking.garageCollection.toLocaleString()}`
+							: ""
+				  }`
+				: booking.isPayment && booking.remaining == 0
+				? " " + "ĐÃ THANH TOÁN"
+				: " " + "CHƯA THANH TOÁN"
+		}
+		Xe phòng nằm ${
 			booking.busCompany == "AA"
 				? "An Anh Amazing"
 				: booking.busCompany == "LV"
@@ -152,49 +133,257 @@ exports.createBooking = async (req, res) => {
 				? "Tân Quang Dũng Amazing"
 				: booking.busCompany == "PP"
 				? "Phong Phú Amazing"
-				: "Khang Thịnh Amazing"
-		}
+				: "Tuấn Tú Amazing"
+		} - ${booking.bookingSource}
+		★ Ngày ${formatDate(booking.dateGo)} : ${booking.trip} : ${
+			booking.timeStart
+		} [PHÒNG số ${booking.seats} ]
 		${
-			booking.quantity
-				? `${
-						booking.quantity
-				  } Phòng đơn / ${booking.ticketPrice.toLocaleString()}`
+			booking.quantity && booking.quantityDouble
+				? `${booking.quantity} Phòng đơn = ${(
+						booking.ticketPrice * booking.quantity
+				  ).toLocaleString()}\n  ${booking.quantityDouble} Phòng đôi = ${(
+						booking.ticketPriceDouble * booking.quantityDouble
+				  ).toLocaleString()}`
+				: booking.quantity
+				? `${booking.quantity} Phòng đơn = ${(
+						booking.ticketPrice * booking.quantity
+				  ).toLocaleString()}`
+				: booking.quantityDouble
+				? `${booking.quantityDouble} Phòng đôi = ${(
+						booking.ticketPriceDouble * booking.quantityDouble
+				  ).toLocaleString()}`
 				: ""
 		}
+		✸ Đón: ${booking.pickuplocation}
+		✸ Trả: ${booking.paylocation}
+		★ Name: ${booking.customerName} - ${booking.phoneNumber}
 		- Phụ thu  : ${booking.surcharge.toLocaleString()}
-		${
-			booking.quantityDouble
-				? `${
-						booking.quantityDouble
-				  } Phòng đôi / ${booking.ticketPriceDouble.toLocaleString()}`
-				: ""
-		}
-		- Số ghế  : ${booking.seats ? booking.seats : ""}
-		- Đón   : ${booking.pickuplocation}
-		- Trả   : ${booking.paylocation}\n\n\n	
-		
 		- Tổng tiền : ${booking.total.toLocaleString()}
-		- CK : ${booking.deposit ? booking.deposit : ""}
-		- Nhân viên :${user.name} `);
-		message = message.replace(/^\s*/gm, "");
+		- Đã thanh toán: ${(booking.transfer + booking.cash).toLocaleString()}
+		- Còn lại: ${booking.remaining.toLocaleString()}
+		${booking.deposit ? booking.deposit : "Chưa có nội dung chuyển khoản"}
+		Nhân viên :${user.name}`);
+
 		await botBooking.sendMessage(chatIdBooking, message, {
 			parse_mode: "MarkdownV2",
 		});
-		// if (zaloMessageResponse && zaloMessageResponse.message == "Success") {
-		// 	booking.isSendZNS = true;
-		// } else {
-		// 	console.log(
-		// 		"Failed to send Zalo message. Response:",
-		// 		zaloMessageResponse
-		// 	);
-		// }
-		await booking.save(); // Lưu booking với trạng thái gửi tin nhắn cập nhật
 
 		res.status(201).json(booking);
 	} catch (error) {
 		res.status(400).json({ error: error.message });
 	}
 };
+
+exports.createBookingFrist = async (req, res) => {
+	try {
+		const booking = new Booking({
+			...req.body,
+			userId: req.user.userId, // Giả sử req.user được thiết lập bởi middleware xác thực
+		});
+		const user = await User.findById(req.user.userId);
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		// Kiểm tra xem đã tồn tại báo cáo cho ngày tạo đơn đặt xe hay chưa
+		let report = await Report.findOne({ date: booking.date });
+
+		if (!report) {
+			// Nếu chưa tồn tại, tạo báo cáo mới
+			report = new Report({
+				date: booking.date,
+			});
+		}
+
+		// Cập nhật thông tin báo cáo với đơn đặt xea mới
+		updateReportWithBookingData(report, booking);
+
+		// Lưu đơn đặt xe và báo cáo
+		await booking.save();
+
+		// Cập nhật thông tin template data
+		const formattedPhone = booking.phoneNumber.startsWith("0")
+			? "84" + booking.phoneNumber.slice(1)
+			: booking.phoneNumber;
+		const templateData = {
+			name: booking.customerName,
+			trip: booking.trip + "-" + booking.seats,
+			phone: formattedPhone,
+			describe_bank: "Cọc vé AMZ" + booking.phoneNumber,
+			code: booking.ticketCode ?  booking.ticketCode : "Chưa có khuyến mãi",
+			time_start: booking.timeStart + "-" + formatDate(booking.dateGo),
+			amout: formatCurrency(booking.total),
+		};
+
+		const phone = formattedPhone; // Số điện thoại muốn gửi tin nhắn
+		const zaloMessageResponse = await sendZaloMessage(
+			phone,
+			templateData,
+			324692
+		);
+		res.status(201).json(booking);
+	} catch (error) {
+		res.status(400).json({ error: error.message });
+	}
+};
+
+exports.createAndNotifyBooking = async (req, res) => {
+	try {
+		const booking = new Booking({
+			...req.body,
+			userId: req.user.userId,
+		});
+		const user = await User.findById(req.user.userId);
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		// Kiểm tra xem đã tồn tại báo cáo cho ngày tạo đơn đặt xe hay chưa
+		let report = await Report.findOne({ date: booking.date });
+
+		if (!report) {
+			report = new Report({
+				date: booking.date,
+			});
+		}
+
+		// Cập nhật thông tin báo cáo với đơn đặt xe mới
+		updateReportWithBookingData(report, booking);
+
+		// Lưu đơn đặt xe và báo cáo
+		await booking.save();
+
+		const formattedPhone = booking.phoneNumber.startsWith("0")
+			? "84" + booking.phoneNumber.slice(1)
+			: booking.phoneNumber;
+		const templateData = {
+			name: booking.customerName,
+			trip: booking.trip + "-" + booking.seats,
+			phone: formattedPhone,
+			describe_bank: "Cọc vé AMZ" + booking.phoneNumber,
+			code: booking.ticketCode ?  booking.ticketCode : "Chưa có khuyến mãi",
+			time_start: booking.timeStart + "-" + formatDate(booking.dateGo),
+			amout: formatCurrency(booking.total),
+		};
+
+		const phone = formattedPhone; // Số điện thoại muốn gửi tin nhắn
+		const zaloMessageResponse = await sendZaloMessage(
+			phone,
+			templateData,
+			324692
+		);
+
+		// Tìm đặt vé khác có cùng ticketCode
+		const linkedBooking = await Booking.findOne({
+			roundTripId: booking.roundTripId,
+		});
+
+		let message = escapeMarkdownV2(`
+		${
+			linkedBooking.isPayment && linkedBooking.garageCollection > 0
+				? `ĐÃ CỌC: ${(
+						linkedBooking.transfer + linkedBooking.cash
+				  ).toLocaleString()} CHUYẾN ĐI - TÀI XÉ THU: ${linkedBooking.garageCollection.toLocaleString()}`
+				: linkedBooking.isPayment && linkedBooking.remaining == 0
+				? "ĐÃ THANH TOÁN CHUYẾN ĐI"
+				: "CHƯA THANH TOÁN CHUYẾN ĐI"
+		}
+		${
+			booking.isPayment && booking.garageCollection > 0
+				? `ĐÃ CỌC: ${(
+						booking.transfer + booking.cash
+				  ).toLocaleString()} CHUYẾN ĐI - TÀI XÉ THU: ${booking.garageCollection.toLocaleString()}`
+				: booking.isPayment && booking.remaining == 0
+				? "ĐÃ THANH TOÁN CHUYẾN VỀ"
+				: "CHƯA THANH TOÁN CHUYẾN VỀ"
+		}
+		Xe phòng nằm ${
+			linkedBooking.busCompany == "AA"
+				? "An Anh Amazing"
+				: linkedBooking.busCompany == "LV"
+				? "Long Vân Amazing"
+				: linkedBooking.busCompany == "LH"
+				? "Lạc Hồng Amazing"
+				: linkedBooking.busCompany == "TQĐ"
+				? "Tân Quang Dũng Amazing"
+				: linkedBooking.busCompany == "PP"
+				? "Phong Phú Amazing"
+				: "Tuấn Tú Amazing"
+		} - ${linkedBooking.bookingSource}
+		★ Ngày ${formatDate(linkedBooking.dateGo)} : ${linkedBooking.trip} : ${
+			linkedBooking.timeStart
+		} [PHÒNG số ${linkedBooking.seats} ]
+		${
+			linkedBooking.quantity && linkedBooking.quantityDouble
+				? `${linkedBooking.quantity} Phòng đơn = ${(
+						linkedBooking.ticketPrice * linkedBooking.quantity
+				  ).toLocaleString()}\n  ${linkedBooking.quantityDouble} Phòng đôi = ${(
+						linkedBooking.ticketPriceDouble * linkedBooking.quantityDouble
+				  ).toLocaleString()}`
+				: linkedBooking.quantity
+				? `${linkedBooking.quantity} Phòng đơn = ${(
+						linkedBooking.ticketPrice * linkedBooking.quantity
+				  ).toLocaleString()}`
+				: linkedBooking.quantityDouble
+				? `${linkedBooking.quantityDouble} Phòng đôi = ${(
+						linkedBooking.ticketPriceDouble * linkedBooking.quantityDouble
+				  ).toLocaleString()}`
+				: ""
+		}
+		✸ Đón: ${linkedBooking.pickuplocation}
+		✸ Trả: ${linkedBooking.paylocation}
+
+		★ Ngày ${formatDate(booking.dateGo)} : ${booking.trip} : ${
+			booking.timeStart
+		} [PHÒNG số ${booking.seats} ]
+		${
+			booking.quantity && booking.quantityDouble
+				? `${booking.quantity} Phòng đơn = ${(
+						booking.ticketPrice * booking.quantity
+				  ).toLocaleString()}\n  ${booking.quantityDouble} Phòng đôi = ${(
+						booking.ticketPriceDouble * booking.quantityDouble
+				  ).toLocaleString()}`
+				: booking.quantity
+				? `${booking.quantity} Phòng đơn = ${(
+						booking.ticketPrice * booking.quantity
+				  ).toLocaleString()}`
+				: booking.quantityDouble
+				? `${booking.quantityDouble} Phòng đôi = ${(
+						booking.ticketPriceDouble * booking.quantityDouble
+				  ).toLocaleString()}`
+				: ""
+		}
+		✸ Đón: ${booking.pickuplocation}
+		✸ Trả: ${booking.paylocation}
+
+		★ Name: ${linkedBooking.customerName} - ${linkedBooking.phoneNumber}
+		- Phụ thu: ${(linkedBooking.surcharge + booking.surcharge).toLocaleString()}
+		- Tổng tiền: ${(booking.total + linkedBooking.total).toLocaleString()}
+		- Đã thanh toán: ${(
+			booking.transfer +
+			booking.cash +
+			linkedBooking.transfer +
+			linkedBooking.cash
+		).toLocaleString()}
+		- Còn lại: ${(booking.remaining + linkedBooking.remaining).toLocaleString()}
+		${booking.deposit ? booking.deposit : "Chưa có nội dung chuyển khoản"}
+		Nhân viên :${user.name}
+		✸ Mã Khuyến Mãi: ${
+			linkedBooking.ticketCode ? linkedBooking.ticketCode : "Chưa có khuyến mãi"
+		}
+        `);
+
+		await botBooking.sendMessage(chatIdBooking, message, {
+			parse_mode: "MarkdownV2",
+		});
+
+		res.status(201).json(booking);
+	} catch (error) {
+		res.status(400).json({ error: error.message });
+	}
+};
+
 const updateReportWithBookingData = async (report, booking) => {
 	try {
 		// Cập nhật tổng doanh thu
@@ -206,7 +395,7 @@ const updateReportWithBookingData = async (report, booking) => {
 			if (report[bookingSource] === undefined) {
 				report[bookingSource] = 1;
 			} else {
-				report[bookingSource]++;
+				report[bookingSource] += booking.quantity + booking.quantityDouble;
 			}
 		}
 
@@ -216,7 +405,7 @@ const updateReportWithBookingData = async (report, booking) => {
 			if (report[busCompany] === undefined) {
 				report[busCompany] = 1;
 			} else {
-				report[busCompany]++;
+				report[busCompany] += booking.quantity + booking.quantityDouble;
 			}
 		}
 
@@ -453,47 +642,38 @@ exports.updateBookingById = async (req, res) => {
 			? "84" + booking.phoneNumber.slice(1)
 			: booking.phoneNumber;
 		const templateData = {
-			name: booking.customerName,
-			trip: booking.trip + "-" + booking.seats,
+			full_name: booking.customerName,
 			phone: formattedPhone,
-			describe_bank: "Cọc vé AMZ" + booking.phoneNumber,
-			code: booking.ticketCode,
-			time_start: booking.timeStart + "-" + formatDate(booking.dateGo),
-			amout: formatCurrency(booking.total),
-		};
-		const templateDataPayment = {
+			seat_number: booking.seats,
+			giodi_ngaydi: booking.timeStart,
 			chuyen_di: booking.trip,
-			ma_ve: booking.ticketCode,
-			so_ghe:
-				booking.seats +
-				" - " +
-				formatDate(booking.dateGo) +
-				" - " +
-				booking.timeStart,
-			con_lai: booking.remaining,
-			customer_name: booking.customerName,
-			diem_tra: booking.paylocation,
-			diem_don: booking.pickuplocation,
-			da_coc: booking.transfer + booking.cash,
-			tong_tien: booking.total,
+			don: booking.pickuplocation,
+			tra: booking.paylocation,
+			tongtien: booking.total.toString(),
 		};
 
-		if (!booking.isPayment && !booking.isSendZNS) {
-			await sendZaloMessage(formattedPhone, templateData, 324692);
-			await booking.save();
-		} else if (booking.isPayment && !booking.isSendZNS) {
-			await sendZaloMessage(formattedPhone, templateDataPayment, 321906);
-			booking.isSendZNS = true;
-			await booking.save();
+		if (!booking.isSendZNS) {
+			await sendZaloMessage(formattedPhone, templateData, 296928);
+			booking.isSendZNS = true; // Sử dụng toán tử so sánh chính xác
+			await booking.save(); // Cập nhật trường isSendZNS trong cơ sở dữ liệu
 		}
 
-		let message = escapeMarkdownV2(`*Thông tin đặt vé:*
-		- ${booking.isPayment ? "ĐÃ THANH TOÁN " : "CHƯA THANH TOÁN"}
-		- Tên khách: ${booking.customerName}
-		- Số điện thoại: ${booking.phoneNumber}
-		- Chuyến: ${booking.trip}
-		- Thời gian đi : ${formatDate(booking.dateGo)} - ${booking.timeStart}
-		- Hãng xe đi : ${
+		let message;
+		if (!booking.roundTripId && !booking.ticketCode) {
+			message = escapeMarkdownV2(`
+		${
+			booking.isPayment && booking.garageCollection > 0
+				? " " +
+				  `ĐÃ CỌC: ${(booking.transfer + booking.cash).toLocaleString()} ${
+						booking.garageCollection > 0
+							? `- TÀI XẾ THU: ${booking.garageCollection.toLocaleString()}`
+							: ""
+				  }`
+				: booking.isPayment && booking.remaining == 0
+				? " " + "ĐÃ THANH TOÁN"
+				: " " + "CHƯA THANH TOÁN"
+		}
+		Xe phòng nằm ${
 			booking.busCompany == "AA"
 				? "An Anh Amazing"
 				: booking.busCompany == "LV"
@@ -504,39 +684,163 @@ exports.updateBookingById = async (req, res) => {
 				? "Tân Quang Dũng Amazing"
 				: booking.busCompany == "PP"
 				? "Phong Phú Amazing"
-				: "Khang Thịnh Amazing"
+				: "Tuấn Tú Amazing"
+		} - ${booking.bookingSource}
+		★ Ngày ${formatDate(booking.dateGo)} : ${booking.trip} : ${
+				booking.timeStart
+			} [PHÒNG số ${booking.seats} ]
+		${
+			booking.quantity && booking.quantityDouble
+				? `${booking.quantity} Phòng đơn = ${(
+						booking.ticketPrice * booking.quantity
+				  ).toLocaleString()}\n  ${booking.quantityDouble} Phòng đôi = ${(
+						booking.ticketPriceDouble * booking.quantityDouble
+				  ).toLocaleString()}`
+				: booking.quantity
+				? `${booking.quantity} Phòng đơn = ${(
+						booking.ticketPrice * booking.quantity
+				  ).toLocaleString()}`
+				: booking.quantityDouble
+				? `${booking.quantityDouble} Phòng đôi = ${(
+						booking.ticketPriceDouble * booking.quantityDouble
+				  ).toLocaleString()}`
+				: ""
 		}
+		✸ Đón: ${booking.pickuplocation}
+		✸ Trả: ${booking.paylocation}
+		★ Name: ${booking.customerName} - ${booking.phoneNumber}
 		- Phụ thu  : ${booking.surcharge.toLocaleString()}
-		${
-			booking.quantity
-				? `${
-						booking.quantity
-				  } Phòng đơn / ${booking.ticketPrice.toLocaleString()}`
-				: ""
-		}
-		${
-			booking.quantityDouble
-				? `${
-						booking.quantityDouble
-				  } Phòng đôi / ${booking.ticketPriceDouble.toLocaleString()}`
-				: ""
-		}
-		- Số ghế  : ${booking.seats ? booking.seats : ""}
-		- Đón : ${booking.pickuplocation}
-		- Trả : ${booking.paylocation}\n\n\n	
-		
-		${
-			booking.quantityBack > 0 || booking.quantityDoubleBack > 0
-				? `- Thời gian về : ${formatDate(booking.dateBack)} - ${
-						booking.timeBack
-				  }`
-				: ""
-		}
-		
 		- Tổng tiền : ${booking.total.toLocaleString()}
-		- CK : ${booking.deposit ? booking.deposit : ""}
-		- Nhân viên :${booking.name} `);
-		message = message.replace(/^\s*/gm, "");
+		- Đã thanh toán: ${(booking.transfer + booking.cash).toLocaleString()}
+		- Còn lại: ${booking.remaining.toLocaleString()}
+		${booking.deposit ? booking.deposit : "Chưa có nội dung chuyển khoản"}
+		Nhân viên :${booking.name}`);
+		}   else  {
+
+			let bookings = [];
+        if (booking.roundTripId) {
+            bookings = await Booking.find({ roundTripId: booking.roundTripId }).sort("createdAt");
+        } else if (booking.ticketCode) {
+            bookings = await Booking.find({ ticketCode: booking.ticketCode }).sort("createdAt");
+        }
+
+		if (bookings.length === 2) {
+            const [outboundTicket, returnTicket] = bookings;
+			message = escapeMarkdownV2(`
+			${
+				outboundTicket.isPayment && outboundTicket.garageCollection > 0
+					? `ĐÃ CỌC: ${(
+							outboundTicket.transfer + outboundTicket.cash
+					  ).toLocaleString()} CHUYẾN ĐI - TÀI XÉ THU: ${outboundTicket.garageCollection.toLocaleString()}`
+					: outboundTicket.isPayment && outboundTicket.remaining == 0
+					? "ĐÃ THANH TOÁN CHUYẾN ĐI"
+					: "CHƯA THANH TOÁN CHUYẾN ĐI"
+			}
+			${
+				returnTicket.isPayment && returnTicket.garageCollection > 0
+					? `ĐÃ CỌC: ${(
+							returnTicket.transfer + returnTicket.cash
+					  ).toLocaleString()} CHUYẾN ĐI - TÀI XÉ THU: ${returnTicket.garageCollection.toLocaleString()}`
+					: returnTicket.isPayment && returnTicket.remaining == 0
+					? "ĐÃ THANH TOÁN CHUYẾN VỀ"
+					: "CHƯA THANH TOÁN CHUYẾN VỀ"
+			}
+			Xe phòng nằm ${
+				outboundTicket.busCompany == "AA"
+					? "An Anh Amazing"
+					: outboundTicket.busCompany == "LV"
+					? "Long Vân Amazing"
+					: outboundTicket.busCompany == "LH"
+					? "Lạc Hồng Amazing"
+					: outboundTicket.busCompany == "TQĐ"
+					? "Tân Quang Dũng Amazing"
+					: outboundTicket.busCompany == "PP"
+					? "Phong Phú Amazing"
+					: "Tuấn Tú Amazing"
+			} - ${outboundTicket.bookingSource}
+			★ Ngày ${formatDate(outboundTicket.dateGo)} : ${outboundTicket.trip} : ${
+				outboundTicket.timeStart
+			} [PHÒNG số ${outboundTicket.seats} ]
+			${
+				outboundTicket.quantity && outboundTicket.quantityDouble
+					? `${outboundTicket.quantity} Phòng đơn = ${(
+							outboundTicket.ticketPrice * outboundTicket.quantity
+					  ).toLocaleString()}\n  ${
+							outboundTicket.quantityDouble
+					  } Phòng đôi = ${(
+							outboundTicket.ticketPriceDouble * outboundTicket.quantityDouble
+					  ).toLocaleString()}`
+					: outboundTicket.quantity
+					? `${outboundTicket.quantity} Phòng đơn = ${(
+							outboundTicket.ticketPrice * outboundTicket.quantity
+					  ).toLocaleString()}`
+					: outboundTicket.quantityDouble
+					? `${outboundTicket.quantityDouble} Phòng đôi = ${(
+							outboundTicket.ticketPriceDouble * outboundTicket.quantityDouble
+					  ).toLocaleString()}`
+					: ""
+			}
+			✸ Đón: ${outboundTicket.pickuplocation}
+			✸ Trả: ${outboundTicket.paylocation}
+			
+			★ Ngày ${formatDate(returnTicket.dateGo)} : ${returnTicket.trip} : ${
+				returnTicket.timeStart
+			} [PHÒNG số ${returnTicket.seats}]
+			${
+				returnTicket.quantity && returnTicket.quantityDouble
+					? `${returnTicket.quantity} Phòng đơn = ${(
+							returnTicket.ticketPrice * returnTicket.quantity
+					  ).toLocaleString()}\n  ${
+							returnTicket.quantityDouble
+					  } Phòng đôi = ${(
+							returnTicket.ticketPriceDouble * returnTicket.quantityDouble
+					  ).toLocaleString()}`
+					: returnTicket.quantity
+					? `${returnTicket.quantity} Phòng đơn = ${(
+							returnTicket.ticketPrice * returnTicket.quantity
+					  ).toLocaleString()}`
+					: returnTicket.quantityDouble
+					? `${returnTicket.quantityDouble} Phòng đôi = ${(
+							returnTicket.ticketPriceDouble * returnTicket.quantityDouble
+					  ).toLocaleString()}`
+					: ""
+			}
+			✸ Đón: ${returnTicket.pickuplocation}
+			✸ Trả: ${returnTicket.paylocation}
+	
+			★ Name: ${outboundTicket.customerName} - ${outboundTicket.phoneNumber}
+			- Phụ thu: ${(
+				outboundTicket.surcharge + returnTicket.surcharge
+			).toLocaleString()}
+			- Tổng tiền: ${(returnTicket.total + outboundTicket.total).toLocaleString()}
+			- Đã thanh toán: ${(
+				returnTicket.transfer +
+				returnTicket.cash +
+				outboundTicket.transfer +
+				outboundTicket.cash
+			).toLocaleString()}
+			- Còn lại: ${(
+				returnTicket.remaining + outboundTicket.remaining
+			).toLocaleString()}
+			${returnTicket.deposit ? returnTicket.deposit : "Chưa có nội dung chuyển khoản"}
+			Nhân viên :${booking.name}
+			✸ Mã Khuyến Mãi: ${
+				outboundTicket.ticketCode
+					? outboundTicket.ticketCode
+					: "Chưa có khuyến mãi"
+			}
+	
+			`);
+        } else {
+            // console.error("Expected exactly two tickets for a round trip, found:", bookings.length);
+
+            // Handle error or unexpected condition appropriately
+			message = escapeMarkdownV2(`No voucher`)
+        }
+			
+			
+		}
+
 		await botBooking.sendMessage(chatIdBooking, message, {
 			parse_mode: "MarkdownV2",
 		});
@@ -548,8 +852,9 @@ exports.updateBookingById = async (req, res) => {
 };
 
 function escapeMarkdownV2(text) {
-	return text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, (x) => "\\" + x);
+	return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
+
 exports.refundBooking = async (req, res) => {
 	const { bookingId } = req.params;
 	const { refundAmount, bank, season } = req.body;
@@ -573,6 +878,7 @@ exports.refundBooking = async (req, res) => {
 			difference: booking.total - refundAmount,
 			seasonCancel: season,
 			status: false,
+			detail: bookingId
 		});
 		await refund.save();
 
@@ -617,6 +923,7 @@ exports.refundBooking = async (req, res) => {
 		report.revenue -= refundAmount;
 
 		await report.save();
+		await Booking.findByIdAndDelete(bookingId);
 
 		res.status(200).json(booking);
 	} catch (error) {
@@ -703,20 +1010,20 @@ exports.getAllBookingsWithTotalZero = async (req, res) => {
 };
 
 exports.getTotalRevenueByUserAndDate = async (req, res) => {
-	const { date } = req.params; // Nhận ngày từ tham số đường dẫn
+	const { startDate, endDate } = req.params; // Nhận ngày bắt đầu và ngày kết thúc từ tham số đường dẫn
 
 	try {
-		const parsedDate = new Date(date);
-		parsedDate.setHours(0, 0, 0, 0);
-		const endDate = new Date(parsedDate);
-		endDate.setHours(23, 59, 59, 999);
+		const parsedStartDate = new Date(startDate);
+		const parsedEndDate = new Date(endDate);
+		parsedStartDate.setHours(0, 0, 0, 0);
+		parsedEndDate.setHours(23, 59, 59, 999);
 
 		const aggregationPipeline = [
 			{
 				$match: {
 					date: {
-						$gte: parsedDate,
-						$lt: endDate,
+						$gte: parsedStartDate,
+						$lte: parsedEndDate,
 					},
 				},
 			},
@@ -727,6 +1034,7 @@ exports.getTotalRevenueByUserAndDate = async (req, res) => {
 					totalTransfer: { $sum: "$transfer" }, // Tính tổng qua chuyển khoản
 					totalCash: { $sum: "$cash" }, // Tính tổng tiền mặt
 					totalGarageCollection: { $sum: "$garageCollection" }, // Tính tổng thu nhập từ garage
+					totalRemaining: { $sum: "$remaining" }, // Tính tổng thu nhập từ garage
 				},
 			},
 			{
@@ -749,6 +1057,7 @@ exports.getTotalRevenueByUserAndDate = async (req, res) => {
 					transfer: "$totalTransfer",
 					cash: "$totalCash",
 					garageCollection: "$totalGarageCollection",
+					remaining: "$totalRemaining",
 				},
 			},
 		];

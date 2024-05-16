@@ -1,9 +1,8 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-const reportController = require('../controllers/reportController');
+const reportController = require("../controllers/reportController");
 
-
-router.get('/' , reportController.getAllReports)
+router.get("/:year/:month", reportController.getAllReports);
 
 module.exports = router;

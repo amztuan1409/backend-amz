@@ -14,6 +14,7 @@ const bookingSchema = new mongoose.Schema(
 				"ZL428",
 				"ZL200",
 				"ZL232",
+				"ZL292",
 				"ZL978",
 				"PD",
 				"LM",
@@ -23,6 +24,28 @@ const bookingSchema = new mongoose.Schema(
 				"COM",
 				"DT",
 				"HL",
+				"TT",
+				"ZL63292"
+			],
+		},
+		bookingSourceEnd: {
+			type: String,
+			enum: [
+				"ZL428",
+				"ZL200",
+				"ZL232",
+				"ZL292",
+				"ZL978",
+				"PD",
+				"LM",
+				"ZLOA",
+				"AMZ",
+				"VN",
+				"COM",
+				"DT",
+				"HL",
+				"TT",
+				"ZL63292"
 			],
 		},
 		timeStart: String,
@@ -36,7 +59,7 @@ const bookingSchema = new mongoose.Schema(
 		seats: String,
 		busCompany: {
 			type: String,
-			enum: ["AA", "LV", "LH", "TQĐ", "PP", "KT"], // Các giá trị cho busCompany
+			enum: ["AA", "LV", "LH", "TQĐ", "PP", "TT"], // Các giá trị cho busCompany
 		},
 		quantity: Number,
 		ticketPrice: Number,
@@ -73,18 +96,22 @@ const bookingSchema = new mongoose.Schema(
 
 		ticketCode: {
 			type: String,
-			default: () => {
-				const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-				let ticketCode = "AMZ";
-				for (let i = 0; i < 5; i++) {
-					ticketCode += characters.charAt(
-						Math.floor(Math.random() * characters.length)
-					);
-				}
-				return ticketCode;
-			},
-			unique: true,
 		},
+		roundTripId:{
+			type: String,
+		},
+		editBy: [
+			{
+				time: {
+					type: Date,
+				},
+				name: {
+					type: String,
+					required: true,
+				},
+				changes: [String],
+			},
+		],
 	},
 	{ timestamps: true }
 );

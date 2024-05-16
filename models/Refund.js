@@ -32,6 +32,10 @@ const refundSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
+		detail: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Booking",
+		}
 	},
 	{ timestamps: true }
 );
