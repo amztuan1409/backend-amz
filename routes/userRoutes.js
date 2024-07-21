@@ -12,4 +12,6 @@ router.get("/:id", authController.getId);
 
 router.get("/", authController.getAllUsers);
 
+router.patch("/changepassword" , authController.changePassword)
+
 module.exports = router;
