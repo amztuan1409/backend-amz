@@ -10,6 +10,7 @@ const refundRoutes = require("./routes/refundRoutes");
 const voucherRoutes = require("./routes/voucherRoutes");
 const messageRoute = require("./routes/messageRoute");
 const salesRaceRoutes = require("./routes/salesRaceRoutes");
+const garageRoutes = require("./routes/garageRoutes")
 const Report = require("./models/Report");
 const connectDB = require("./db/index");
 const app = express();
@@ -58,6 +59,7 @@ app.use("/api/refund", refundRoutes);
 app.use("/api/voucher", voucherRoutes);
 app.use("/api/salesrace", salesRaceRoutes);
 app.use("/api/message", messageRoute);
+app.use("/api/garages" , garageRoutes)
 
 
 app.listen(8800, () => console.log("Server running on port 8800"));

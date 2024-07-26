@@ -22,10 +22,10 @@ const bookingSchema = new mongoose.Schema(
     paylocation: String,
     note: String,
     deposit: String,
+    cv: String,
     seats: String,
     busCompany: {
       type: String,
-      enum: ["AA", "LV", "LH", "TQĐ", "PP", "TT"], // Các giá trị cho busCompany
     },
     quantity: Number,
     ticketPrice: Number,
@@ -82,6 +82,15 @@ const bookingSchema = new mongoose.Schema(
         changes: [String],
       },
     ],
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   { timestamps: true }
 );

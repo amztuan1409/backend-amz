@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Expense = require("../models/Expense");
 const Report = require("../models/Report");
 const Refund = require("../models/Refund");
+const Recycle = require("../models/Recycle");
 const mongoose = require("mongoose");
 const SalesRace = require("../models/SalesRace");
 const Message = require("../models/Message");
@@ -623,7 +624,12 @@ const calculateRelativeProfit = async (date, total, avStaffCostDeducted) => {
 exports.getAllBookings = async (req, res) => {
   try {
     const { year, month, userId, page = 1, limit = 20, search, filters } = req.query;
-    let query = {};
+    let query = {
+      $or: [
+        { isDeleted: false },
+        { isDeleted: { $exists: false } }
+      ]
+    };
 
     // Nếu có userId, thêm vào điều kiện query
     if (userId) {
@@ -700,7 +706,10 @@ exports.getBookingsByUserId = async (req, res) => {
       return res.status(400).json({ message: "userId is required" });
     }
 
-    let query = { userId: userId }; // Tạo query mặc định
+    let query = { userId: userId , $or: [
+      { isDeleted: false },
+      { isDeleted: { $exists: false } }
+    ]}; // Tạo query mặc định
 
     if (date) {
       // Nếu có date, lọc bookings cho ngày đó
@@ -799,8 +808,10 @@ exports.updateBookingById = async (req, res) => {
         const newValue = updateData[field];
         if (
           newValue !== undefined &&
-          oldValue !== newValue.toString() &&
-          oldValue !== newValue
+          newValue !== null &&
+          oldValue !== null &&
+          oldValue !== undefined &&
+          oldValue.toString() !== newValue.toString()
         ) {
           // Sử dụng ánh xạ để thay thế tên trường
           const fieldNameInVietnamese = fieldMappings[field] || field; // Dùng tên tiếng Anh nếu không tìm thấy ánh xạ
@@ -1163,6 +1174,7 @@ exports.updateBookingById = async (req, res) => {
   }
 };
 
+
 function escapeMarkdownV2(text) {
   return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
@@ -1276,14 +1288,16 @@ exports.refundBooking = async (req, res) => {
 
 
 exports.deleteBookingById = async (req, res) => {
-  const { bookingId } = req.params;
-
+  const { bookingId  } = req.params;
+  const { userId } = req.body
   try {
     // Tìm booking nhưng không xóa ngay lập tức
     const booking = await Booking.findById(bookingId);
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
+    booking.isDeleted = true;
+    booking.deletedBy = userId;
 
     // Lưu lại thông số cũ của đơn đặt xe để so sánh
     const oldTotal = booking.total;
@@ -1333,7 +1347,7 @@ exports.deleteBookingById = async (req, res) => {
     await report.save();
 
     // Xóa booking sau khi đã cập nhật báo cáo
-    await Booking.findByIdAndDelete(bookingId);
+    // await Booking.findByIdAndDelete(bookingId);
     await updateSalesTotalByMonthAndUser(
       booking.userId,
       booking.date,
@@ -1342,7 +1356,7 @@ exports.deleteBookingById = async (req, res) => {
       booking.cash,
       booking.garageCollection
     );
-
+    await booking.save(); 
     res.status(200).json({ message: "Booking deleted successfully" });
   } catch (error) {
     console.error(error);
@@ -1376,6 +1390,10 @@ exports.getTotalRevenueByUserAndDate = async (req, res) => {
             $gte: parsedStartDate,
             $lte: parsedEndDate,
           },
+          $or: [
+            { isDeleted: false },
+            { isDeleted: { $eq: null } }
+          ]
         },
       },
       {
@@ -1572,5 +1590,148 @@ exports.getUniqueDates = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching dates", error });
+  }
+};
+
+
+exports.restoreBookingById = async (req, res) => {
+  const { bookingId } = req.params;
+
+  try {
+    // Tìm booking đã bị đánh dấu là xóa
+    const booking = await Booking.findOne({ _id: bookingId, isDeleted: true });
+    if (!booking) {
+      return res.status(404).json({ message: "Deleted booking not found" });
+    }
+
+    // Khôi phục booking
+    booking.isDeleted = false;
+    booking.deletedBy = null;
+
+    // Cập nhật lại báo cáo
+    const oldTotal = booking.total;
+    const bookingSource = booking.bookingSource ? booking.bookingSource.toLowerCase() : "";
+    const busCompany = booking.busCompany ? booking.busCompany.toLowerCase() : "";
+
+    let report = await Report.findOne({ date: booking.date });
+    if (!report) {
+      // Tạo mới report nếu không tồn tại
+      report = new Report({ date: booking.date });
+    }
+
+    report.revenue += oldTotal;
+    report.relativeProfit += await calculateRelativeProfit(
+      booking.date,
+      oldTotal,
+      report.avStaffCostDeducted
+    );
+
+    if (bookingSource) {
+      if (!report[bookingSource]) {
+        report[bookingSource] = 0;
+      }
+      report[bookingSource] += booking.quantity + booking.quantityDouble;
+    }
+
+    if (busCompany) {
+      if (!report[busCompany]) {
+        report[busCompany] = 0;
+      }
+      report[busCompany] += booking.quantity + booking.quantityDouble;
+    }
+
+    await report.save();
+
+    // Cập nhật sales total
+    await updateSalesTotalByMonthAndUser(
+      booking.userId,
+      new Date(booking.date),
+      "add",
+      booking.transfer,
+      booking.cash,
+      booking.garageCollection
+    );
+
+    await booking.save(); // Lưu thay đổi vào cơ sở dữ liệu
+
+    res.status(200).json({ message: "Booking restored successfully", booking });
+  } catch (error) {
+    console.error("Error restoring booking:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.getAllDeletedBookings = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search, filters } = req.query;
+    let query = { isDeleted: true };
+
+    // Thêm điều kiện tìm kiếm
+    if (search) {
+      query.$or = [
+        { phoneNumber: { $regex: search, $options: "i" } },
+        { customerName: { $regex: search, $options: "i" } },
+        // Thêm các trường khác cần tìm kiếm nếu có
+      ];
+    }
+
+    // Thêm điều kiện lọc
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        query[key] = filters[key];
+      });
+    }
+
+    // Tính tổng số bản ghi
+    const total = await Booking.countDocuments(query);
+
+    // Tính toán số lượng phần tử cần bỏ qua
+    const skip = (page - 1) * limit;
+
+    // Truy vấn cơ sở dữ liệu để lấy bookings
+    let bookings = await Booking.find(query)
+      .populate("userId", "name") // Populating username from User model
+      .populate("deletedBy", "name") 
+      .sort({ date: -1 })
+      .skip(skip) // Bỏ qua các phần tử trước trang hiện tại
+      .limit(Number(limit)); // Giới hạn số phần tử lấy ra
+
+    // Chuyển đổi ngày thành định dạng 'dd/mm/yyyy' và username lên cấp độ cao hơn trong đối tượng
+    bookings = bookings.map((booking) => {
+      const bookingObject = booking.toObject();
+      // Set username at the top-level of the object
+      bookingObject.name = bookingObject.userId.name;
+      // Remove the userId field
+      delete bookingObject.userId;
+      return bookingObject;
+    });
+
+    res.status(200).json({
+      total,
+      page,
+      limit,
+      bookings
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+};
+
+exports.permanentlyDeleteBooking = async (req, res) => {
+  const { bookingId } = req.params;
+
+  try {
+    const booking = await Booking.findOne({ _id: bookingId, isDeleted: true });
+    if (!booking) {
+      return res.status(404).json({ message: "Deleted booking not found" });
+    }
+
+    await Booking.deleteOne({ _id: bookingId });
+
+    res.status(200).json({ message: "Booking permanently deleted successfully" });
+  } catch (error) {
+    console.error("Error permanently deleting booking:", error);
+    res.status(500).json({ error: error.message });
   }
 };
