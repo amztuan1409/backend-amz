@@ -28,13 +28,20 @@ router.post(
 );
 
 router.get("/", bookingController.getAllBookings);
-router.get('/filters' , bookingController.getUniqueDates)
-router.post("/restore-booking/:bookingId" , bookingController.restoreBookingById)
+router.get("/filters", bookingController.getUniqueDates);
+router.post(
+  "/restore-booking/:bookingId",
+  bookingController.restoreBookingById
+);
+router.patch("/send-zns-payment/:bookingId", bookingController.sendZNSPayment);
 router.get("/get-order-byuser/:userId", bookingController.getBookingsByUserId);
-router.get("/deleteds" , bookingController.getAllDeletedBookings)
-router.delete("/delete-out-recycle/:bookingId" , bookingController.permanentlyDeleteBooking)
+router.get("/deleteds", bookingController.getAllDeletedBookings);
+router.delete(
+  "/delete-out-recycle/:bookingId",
+  bookingController.permanentlyDeleteBooking
+);
 router.post("/getbyuserId", bookingController.getBookingsByUserId);
-router.get('/export-excel', bookingController.exportBookingsToExcel);
+router.get("/export-excel", bookingController.exportBookingsToExcel);
 
 router.patch("/:bookingId", verifyToken, bookingController.updateBookingById);
 
@@ -50,7 +57,5 @@ router.get(
   "/revenue/:startDate/:endDate",
   bookingController.getTotalRevenueByUserAndDate
 );
-
-
 
 module.exports = router;

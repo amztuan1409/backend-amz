@@ -16,7 +16,7 @@ const botToken = "6994113641:AAFtxp5Q3hUVUAfWCi6VNHxCfPghmPoMzEI";
 const chatIdBooking = "-4196368779";
 const chatIdRefund = "-4166682869";
 const botTokenBooking = "7042630214:AAH8W9G_a9a00szypErr1YiKPUYghgY42UQ";
-const ExcelJS = require('exceljs');
+const ExcelJS = require("exceljs");
 let accessToken =
   "g_YhKZojNNkX-g1NEgrHTwJyfLub-bWc_U_833I-FNBJkiujExKpT_2Kk3yJkYDhtQYACJYKTqRXW-OL6h9rNU-o-Ym3e7fGsO_N7oUyAaZXgO4PTgGYRkghgKGJZXaVXOkLLqQn17g6dOO4SBGKTQQoY0rwe2fwWxMe8MkINGw2cVXaHeWHATkjcduizZakyhZDU3MlI1YZfSr3EVvJ6Dt-sKCrnqbgs93UHHAtO328lUzSVgXSFu2i_a9YWri2ZvVnMckJP7ByfUO38x1jBE6_t6OQkLnD-wl8CpMNEXshguWsKEKJUPl1dHXTrI59lTUI7rlJ2NMYdQS7JwGgIAIic6OchYegvO-KHtoxEn-2kPWoUx0FOgsvhWzNW0HwgCweEdVZ3aAxi_yfHf5_GBopx2YlOyGPCBLSUm";
 let refreshToken =
@@ -623,12 +623,17 @@ const calculateRelativeProfit = async (date, total, avStaffCostDeducted) => {
 
 exports.getAllBookings = async (req, res) => {
   try {
-    const { year, month, userId, page = 1, limit = 20, search, filters } = req.query;
+    const {
+      year,
+      month,
+      userId,
+      page = 1,
+      limit = 20,
+      search,
+      filters,
+    } = req.query;
     let query = {
-      $or: [
-        { isDeleted: false },
-        { isDeleted: { $exists: false } }
-      ]
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
     };
 
     // Nếu có userId, thêm vào điều kiện query
@@ -654,8 +659,24 @@ exports.getAllBookings = async (req, res) => {
 
     // Thêm điều kiện lọc
     if (filters) {
-      Object.keys(filters).forEach(key => {
-        query[key] = filters[key];
+      Object.keys(filters).forEach((key) => {
+        if (key === "dateGo") {
+          if (Array.isArray(filters[key])) {
+            query[key] = {
+              $in: filters[key].map((dateStr) => new Date(dateStr)),
+            };
+          } else if (typeof filters[key] === "object") {
+            query[key] = {
+              $in: Object.values(filters[key]).map(
+                (dateStr) => new Date(dateStr)
+              ),
+            };
+          } else {
+            query[key] = new Date(filters[key]);
+          }
+        } else {
+          query[key] = filters[key];
+        }
       });
     }
 
@@ -668,15 +689,20 @@ exports.getAllBookings = async (req, res) => {
     // Truy vấn cơ sở dữ liệu để lấy bookings
     let bookings = await Booking.find(query)
       .populate("userId", "name") // Populating username from User model
-      .sort({ date: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip) // Bỏ qua các phần tử trước trang hiện tại
       .limit(Number(limit)); // Giới hạn số phần tử lấy ra
 
     // Chuyển đổi ngày thành định dạng 'dd/mm/yyyy' và username lên cấp độ cao hơn trong đối tượng
     bookings = bookings.map((booking) => {
       const bookingObject = booking.toObject();
-      // Set username at the top-level of the object
-      bookingObject.name = bookingObject.userId.name;
+      // Check if userId exists and has a name property
+      if (bookingObject.userId && bookingObject.userId.name) {
+        // Set username at the top-level of the object
+        bookingObject.name = bookingObject.userId.name;
+      } else {
+        bookingObject.name = "Tài khoản đã bị xóa";
+      }
       // Remove the userId field
       delete bookingObject.userId;
       return bookingObject;
@@ -686,14 +712,15 @@ exports.getAllBookings = async (req, res) => {
       total,
       page,
       limit,
-      bookings
+      bookings,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
-
 
 const moment = require("moment");
 
@@ -706,10 +733,10 @@ exports.getBookingsByUserId = async (req, res) => {
       return res.status(400).json({ message: "userId is required" });
     }
 
-    let query = { userId: userId , $or: [
-      { isDeleted: false },
-      { isDeleted: { $exists: false } }
-    ]}; // Tạo query mặc định
+    let query = {
+      userId: userId,
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+    }; // Tạo query mặc định
 
     if (date) {
       // Nếu có date, lọc bookings cho ngày đó
@@ -910,54 +937,54 @@ exports.updateBookingById = async (req, res) => {
     await report.save();
 
     // Send ZNS with updated information
-    const formattedPhone = booking.phoneNumber.startsWith("0")
-      ? "84" + booking.phoneNumber.slice(1)
-      : booking.phoneNumber;
-    const templateData = {
-      name: booking.customerName,
-      time: booking.timeStart + "-" + formatDate(booking.dateGo),
-      route_name: booking.trip,
-      sdt: formattedPhone,
-      number_seat: booking.seats,
-      surcharge: formatCurrency(booking.surcharge),
-      amount: formatCurrency(booking.total),
-      price: formatCurrency(booking.total),
-      bank_info: "Ngân hàng MB",
-      receiver_info: "Lê Chí Trung",
-      account_number: "VQRQ0001ql2pu",
-      amount: formatCurrency(booking.total),
-      Note: booking.note || "Chưa có",
-      hotline: "1900 588 810",
-    };
+    // const formattedPhone = booking.phoneNumber.startsWith("0")
+    //   ? "84" + booking.phoneNumber.slice(1)
+    //   : booking.phoneNumber;
+    // const templateData = {
+    //   name: booking.customerName,
+    //   time: booking.timeStart + "-" + formatDate(booking.dateGo),
+    //   route_name: booking.trip,
+    //   sdt: formattedPhone,
+    //   number_seat: booking.seats,
+    //   surcharge: formatCurrency(booking.surcharge),
+    //   amount: formatCurrency(booking.total),
+    //   price: formatCurrency(booking.total),
+    //   bank_info: "Ngân hàng MB",
+    //   receiver_info: "Lê Chí Trung",
+    //   account_number: "VQRQ0001ql2pu",
+    //   amount: formatCurrency(booking.total),
+    //   Note: booking.note || "Chưa có",
+    //   hotline: "1900 588 810",
+    // };
 
-    const templateDataIsPayment = {
-      customer_name: booking.customerName,
-      time: booking.timeStart + "-" + formatDate(booking.dateGo),
-      route_name: booking.trip,
-      phone: formattedPhone,
-      number_seat: booking.seats,
-      surcharge: formatCurrency(booking.surcharge),
-      pick_up: booking.pickuplocation || "Chưa có",
-      drop_off: booking.paylocation || "Chưa có",
-      price: formatCurrency(booking.total),
-      amount: formatCurrency(booking.total),
-      deposit: formatCurrency(
-        booking.transfer + booking.garageCollection + booking.cash
-      ),
-      remaining: formatCurrency(booking.remaining),
-      Note: booking.note || "Chưa có",
-      hotline: "1900 588 810",
-    };
+    // const templateDataIsPayment = {
+    //   customer_name: booking.customerName,
+    //   time: booking.timeStart + "-" + formatDate(booking.dateGo),
+    //   route_name: booking.trip,
+    //   phone: formattedPhone,
+    //   number_seat: booking.seats,
+    //   surcharge: formatCurrency(booking.surcharge),
+    //   pick_up: booking.pickuplocation || "Chưa có",
+    //   drop_off: booking.paylocation || "Chưa có",
+    //   price: formatCurrency(booking.total),
+    //   amount: formatCurrency(booking.total),
+    //   deposit: formatCurrency(
+    //     booking.transfer + booking.garageCollection + booking.cash
+    //   ),
+    //   remaining: formatCurrency(booking.remaining),
+    //   Note: booking.note || "Chưa có",
+    //   hotline: "1900 588 810",
+    // };
 
-    if (!booking.isPayment) {
-      await sendZaloMessage(formattedPhone, templateData, 333155);
-      booking.isSendZNS = true;
-      await booking.save();
-    } else if (booking.isPayment) {
-      await sendZaloMessage(formattedPhone, templateDataIsPayment, 333174);
-      booking.isSendZNS = true;
-      await booking.save();
-    }
+    // if (!booking.isPayment) {
+    //   await sendZaloMessage(formattedPhone, templateData, 333155);
+    //   booking.isSendZNS = true;
+    //   await booking.save();
+    // } else if (booking.isPayment) {
+    //   await sendZaloMessage(formattedPhone, templateDataIsPayment, 333174);
+    //   booking.isSendZNS = true;
+    //   await booking.save();
+    // }
 
     let message;
     if (!booking.roundTripId && !booking.ticketCode) {
@@ -1174,6 +1201,66 @@ exports.updateBookingById = async (req, res) => {
   }
 };
 
+exports.sendZNSPayment = async (req, res) => {
+  const { bookingId } = req.params;
+  try {
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+    const formattedPhone = booking.phoneNumber.startsWith("0")
+      ? "84" + booking.phoneNumber.slice(1)
+      : booking.phoneNumber;
+    const templateData = {
+      name: booking.customerName,
+      time: booking.timeStart + "-" + formatDate(booking.dateGo),
+      route_name: booking.trip,
+      sdt: formattedPhone,
+      number_seat: booking.seats,
+      surcharge: formatCurrency(booking.surcharge),
+      amount: formatCurrency(booking.total),
+      price: formatCurrency(booking.total),
+      bank_info: "Ngân hàng MB",
+      receiver_info: "Lê Chí Trung",
+      account_number: "VQRQ0001ql2pu",
+      amount: formatCurrency(booking.total),
+      Note: booking.note || "Chưa có",
+      hotline: "1900 588 810",
+    };
+
+    const templateDataIsPayment = {
+      customer_name: booking.customerName,
+      time: booking.timeStart + "-" + formatDate(booking.dateGo),
+      route_name: booking.trip,
+      phone: formattedPhone,
+      number_seat: booking.seats,
+      surcharge: formatCurrency(booking.surcharge),
+      pick_up: booking.pickuplocation || "Chưa có",
+      drop_off: booking.paylocation || "Chưa có",
+      price: formatCurrency(booking.total),
+      amount: formatCurrency(booking.total),
+      deposit: formatCurrency(
+        booking.transfer + booking.garageCollection + booking.cash
+      ),
+      remaining: formatCurrency(booking.remaining),
+      Note: booking.note || "Chưa có",
+      hotline: "1900 588 810",
+    };
+
+    if (!booking.isPayment) {
+      await sendZaloMessage(formattedPhone, templateData, 333155);
+      booking.isSendZNS = true;
+      await booking.save();
+    } else if (booking.isPayment) {
+      await sendZaloMessage(formattedPhone, templateDataIsPayment, 333174);
+      booking.isSendZNS = true;
+      await booking.save();
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
 
 function escapeMarkdownV2(text) {
   return text.replace(/([_*[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
@@ -1268,12 +1355,12 @@ exports.refundBooking = async (req, res) => {
       await Booking.deleteOne({ _id: bookingId });
     } else {
       // Cập nhật trường remaining của booking
-      booking.remaining = booking.total - (
-        booking.transfer + 
-        booking.cash + 
-        booking.garageCollection + 
-        booking.refund
-      );
+      booking.remaining =
+        booking.total -
+        (booking.transfer +
+          booking.cash +
+          booking.garageCollection +
+          booking.refund);
       await booking.save();
     }
 
@@ -1286,10 +1373,9 @@ exports.refundBooking = async (req, res) => {
   }
 };
 
-
 exports.deleteBookingById = async (req, res) => {
-  const { bookingId  } = req.params;
-  const { userId } = req.body
+  const { bookingId } = req.params;
+  const { userId } = req.body;
   try {
     // Tìm booking nhưng không xóa ngay lập tức
     const booking = await Booking.findById(bookingId);
@@ -1298,6 +1384,7 @@ exports.deleteBookingById = async (req, res) => {
     }
     booking.isDeleted = true;
     booking.deletedBy = userId;
+    console.log(userId);
 
     // Lưu lại thông số cũ của đơn đặt xe để so sánh
     const oldTotal = booking.total;
@@ -1356,7 +1443,7 @@ exports.deleteBookingById = async (req, res) => {
       booking.cash,
       booking.garageCollection
     );
-    await booking.save(); 
+    await booking.save();
     res.status(200).json({ message: "Booking deleted successfully" });
   } catch (error) {
     console.error(error);
@@ -1390,10 +1477,7 @@ exports.getTotalRevenueByUserAndDate = async (req, res) => {
             $gte: parsedStartDate,
             $lte: parsedEndDate,
           },
-          $or: [
-            { isDeleted: false },
-            { isDeleted: { $eq: null } }
-          ]
+          $or: [{ isDeleted: false }, { isDeleted: { $eq: null } }],
         },
       },
       {
@@ -1443,21 +1527,20 @@ exports.getTotalRevenueByUserAndDate = async (req, res) => {
   }
 };
 
-
 exports.exportBookingsToExcel = async (req, res) => {
   try {
     const { search, filters } = req.query;
 
     // Xây dựng query từ các bộ lọc
-    let query = {};
+    let query = { isDeleted: { $ne: true } };
     if (search) {
       query = {
         ...query,
         $or: [
-          { phoneNumber: { $regex: search, $options: 'i' } },
-          { customerName: { $regex: search, $options: 'i' } },
+          { phoneNumber: { $regex: search, $options: "i" } },
+          { customerName: { $regex: search, $options: "i" } },
           // Thêm các trường cần tìm kiếm khác nếu có
-        ]
+        ],
       };
     }
 
@@ -1475,52 +1558,55 @@ exports.exportBookingsToExcel = async (req, res) => {
       });
     }
 
-    console.log('Generated Query:', query); // Log query để kiểm tra
+    console.log("Generated Query:", query); // Log query để kiểm tra
 
     // Truy vấn dữ liệu từ MongoDB
-    const bookings = await Booking.find(query).lean().populate('userId', 'name');
-    console.log(bookings)
+    const bookings = await Booking.find(query)
+      .lean()
+      .populate("userId", "name");
+    console.log(bookings);
 
     if (bookings.length === 0) {
-      return res.status(404).send('No bookings found matching the criteria.');
+      return res.status(404).send("No bookings found matching the criteria.");
     }
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Bookings');
+    const worksheet = workbook.addWorksheet("Bookings");
 
     // Định nghĩa cột trong file Excel
     worksheet.columns = [
-      { header: 'Nguồn nhận', key: 'bookingSource' },
-      { header: 'Nguồn chốt', key: 'bookingSourceEnd' },
-      { header: 'Thời gian khởi hành', key: 'timeStart' },
-      { header: 'Tên khách hàng', key: 'customerName' },
-      { header: 'Số điện thoại', key: 'phoneNumber' },
-      { header: 'Chuyến đi', key: 'trip' },
-      { header: 'Điểm đón', key: 'pickuplocation' },
-      { header: 'Điểm trả', key: 'paylocation' },
-      { header: 'Số ghế', key: 'seats' },
-      { header: 'Hãng xe', key: 'busCompany' },
-      { header: 'Vé đơn', key: 'quantity' },
-      { header: 'Giá vé đơn', key: 'ticketPrice' },
-      { header: 'Giá vé đôi', key: 'ticketPriceDouble' },
-      { header: 'Vé đôi', key: 'quantityDouble' },
-      { header: 'Tổng tiền', key: 'total' },
-      { header: 'Thanh toán', key: 'isPayment' },
-      { header: 'Đã gửi ZNS', key: 'isSendZNS' },
-      { header: 'Phụ thu', key: 'surcharge' },
-      { header: 'Tiền chuyển khoản', key: 'transfer' },
-      { header: 'Tiền mặt', key: 'cash' },
-      { header: 'Nhà xe nhận', key: 'garageCollection' },
-      { header: 'Còn lại', key: 'remaining' },
-      { header: 'Mã khuyến mãi', key: 'ticketCode' },
-      { header: 'Mã khứ hồi', key: 'roundTripId' },
-      { header: 'editBy', key: 'editBy' },
-      { header: 'Cọc', key: 'deposit' },
-      { header: 'Tên nhân viên', key: 'name' },
-      { header: 'Ngày', key: 'date' },
-      { header: 'Ngày đi', key: 'dateGo' },
-      { header: 'Ngày về', key: 'dateBack' },
-      { header: 'Ghi chú', key: 'note' }
+      { header: "Nguồn nhận", key: "bookingSource" },
+      { header: "Nguồn chốt", key: "bookingSourceEnd" },
+      { header: "Thời gian khởi hành", key: "timeStart" },
+      { header: "Tên khách hàng", key: "customerName" },
+      { header: "Số điện thoại", key: "phoneNumber" },
+      { header: "Chuyến đi", key: "trip" },
+      { header: "Điểm đón", key: "pickuplocation" },
+      { header: "Điểm trả", key: "paylocation" },
+      { header: "Số ghế", key: "seats" },
+      { header: "Hãng xe", key: "busCompany" },
+      { header: "Vé đơn", key: "quantity" },
+      { header: "Giá vé đơn", key: "ticketPrice" },
+      { header: "Giá vé đôi", key: "ticketPriceDouble" },
+      { header: "Vé đôi", key: "quantityDouble" },
+      { header: "Tổng tiền", key: "total" },
+      { header: "Thanh toán", key: "isPayment" },
+      { header: "Đã gửi ZNS", key: "isSendZNS" },
+      { header: "Phụ thu", key: "surcharge" },
+      { header: "Tiền chuyển khoản", key: "transfer" },
+      { header: "Tiền mặt", key: "cash" },
+      { header: "Nhà xe nhận", key: "garageCollection" },
+      { header: "Còn lại", key: "remaining" },
+      { header: "Mã khuyến mãi", key: "ticketCode" },
+      { header: "Mã khứ hồi", key: "roundTripId" },
+      { header: "editBy", key: "editBy" },
+      { header: "Cọc", key: "deposit" },
+      { header: "Tên nhân viên", key: "name" },
+      { header: "Ngày", key: "date" },
+      { header: "Ngày đi", key: "dateGo" },
+      { header: "Ngày về", key: "dateBack" },
+      { header: "Ghi chú", key: "note" },
+      { header: "CV", key: "cv" },
     ];
 
     // Thêm dữ liệu vào worksheet
@@ -1541,8 +1627,8 @@ exports.exportBookingsToExcel = async (req, res) => {
         ticketPriceDouble: booking.ticketPriceDouble,
         quantityDouble: booking.quantityDouble,
         total: booking.total,
-        isPayment: booking.isPayment ? 'Đã thanh toán' : 'Chưa thanh toán',
-        isSendZNS: booking.isSendZNS ? 'Đã gửi ZNS' : 'Chưa gửi ZNS',
+        isPayment: booking.isPayment ? "Đã thanh toán" : "Chưa thanh toán",
+        isSendZNS: booking.isSendZNS ? "Đã gửi ZNS" : "Chưa gửi ZNS",
         surcharge: booking.surcharge,
         transfer: booking.transfer,
         cash: booking.cash,
@@ -1552,26 +1638,29 @@ exports.exportBookingsToExcel = async (req, res) => {
         roundTripId: booking.roundTripId,
         editBy: booking.editBy,
         deposit: booking.deposit,
-        name: booking.userId.name,
+        name: booking.userId ? booking.userId.name : "Unknow",
         date: booking.date,
         dateGo: booking.dateGo,
         dateBack: booking.dateBack,
-        note: booking.note
+        note: booking.note,
+        cv: booking.cv,
       });
     });
 
     // Thiết lập header để trả về file Excel
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=bookings.xlsx');
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=bookings.xlsx");
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
-    console.error('Error exporting data:', error);
-    res.status(500).send('Error exporting data');
+    console.error("Error exporting data:", error);
+    res.status(500).send("Error exporting data");
   }
 };
-
 
 exports.getUniqueDates = async (req, res) => {
   try {
@@ -1593,7 +1682,6 @@ exports.getUniqueDates = async (req, res) => {
   }
 };
 
-
 exports.restoreBookingById = async (req, res) => {
   const { bookingId } = req.params;
 
@@ -1610,8 +1698,12 @@ exports.restoreBookingById = async (req, res) => {
 
     // Cập nhật lại báo cáo
     const oldTotal = booking.total;
-    const bookingSource = booking.bookingSource ? booking.bookingSource.toLowerCase() : "";
-    const busCompany = booking.busCompany ? booking.busCompany.toLowerCase() : "";
+    const bookingSource = booking.bookingSource
+      ? booking.bookingSource.toLowerCase()
+      : "";
+    const busCompany = booking.busCompany
+      ? booking.busCompany.toLowerCase()
+      : "";
 
     let report = await Report.findOne({ date: booking.date });
     if (!report) {
@@ -1677,7 +1769,7 @@ exports.getAllDeletedBookings = async (req, res) => {
 
     // Thêm điều kiện lọc
     if (filters) {
-      Object.keys(filters).forEach(key => {
+      Object.keys(filters).forEach((key) => {
         query[key] = filters[key];
       });
     }
@@ -1691,8 +1783,8 @@ exports.getAllDeletedBookings = async (req, res) => {
     // Truy vấn cơ sở dữ liệu để lấy bookings
     let bookings = await Booking.find(query)
       .populate("userId", "name") // Populating username from User model
-      .populate("deletedBy", "name") 
-      .sort({ date: -1 })
+      .populate("deletedBy", "name")
+      .sort({ updatedAt: -1 })
       .skip(skip) // Bỏ qua các phần tử trước trang hiện tại
       .limit(Number(limit)); // Giới hạn số phần tử lấy ra
 
@@ -1710,11 +1802,13 @@ exports.getAllDeletedBookings = async (req, res) => {
       total,
       page,
       limit,
-      bookings
+      bookings,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
@@ -1729,7 +1823,9 @@ exports.permanentlyDeleteBooking = async (req, res) => {
 
     await Booking.deleteOne({ _id: bookingId });
 
-    res.status(200).json({ message: "Booking permanently deleted successfully" });
+    res
+      .status(200)
+      .json({ message: "Booking permanently deleted successfully" });
   } catch (error) {
     console.error("Error permanently deleting booking:", error);
     res.status(500).json({ error: error.message });

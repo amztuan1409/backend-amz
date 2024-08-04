@@ -120,3 +120,27 @@ exports.changePassword = async (req, res) => {
 		res.status(500).json({ message: "Internal server error" });
 	}
 };
+exports.deleteUser = async (req, res) => {
+    const { id } = req.params; // Lấy ID từ params
+
+    if (!id) {
+        return res.status(400).json({ message: "User ID is required" });
+    }
+
+    try {
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        await User.deleteOne({ _id: id });
+
+        res.json({ message: "User deleted successfully" });
+    } catch (error) {
+        if (error.kind === "ObjectId") {
+            return res.status(400).json({ message: "Invalid user ID" });
+        }
+        console.error("Delete User error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
